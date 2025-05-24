@@ -94,105 +94,100 @@ Con base en probabilidad (porcentaje) x impacto (menor, medio, mayor, critico) s
 | **Bajo**     | Probabilidad <10% + Impacto Menor   | T06, T07, S05, L02, O02, F02, C02, C03 | Aceptación controlada  | - Documentar en registro de riesgos<br>- Incluir en revisiones                                       
 
 ---
-## Leyes y Estándares Relevantes para la Plataforma **Data Pura Vida**
 
-### Ley 8968 - Ley de Protección de la Persona frente al Tratamiento de sus Datos Personales (Costa Rica)
+## Relevant Laws and Standards for the **Data Pura Vida** Platform
 
-#### ¿Qué es?
+### Law 8968 - Law on the Protection of Individuals Regarding the Processing of Their Personal Data (Costa Rica)
 
-La **Ley 8968**, publicada en Costa Rica, establece el marco legal para la protección de los datos personales de los individuos. Esta ley garantiza los derechos fundamentales de las personas respecto al tratamiento de su información personal, asegurando su privacidad y control sobre sus datos.
+#### What is it?
 
-#### Aplicación en el proyecto
+**Law 8968**, published in Costa Rica, establishes the legal framework for the protection of individuals' personal data. This law guarantees individuals' fundamental rights regarding the processing of their personal information, ensuring their privacy and control over their data.
 
-- **Registro de usuarios**: Al recopilar información personal y documentos de identificación, es crítico obtener el consentimiento explícito de los usuarios y garantizar la transparencia en el uso de sus datos.
-- **Módulo "Feliz compartiendo datos"**: Debe permitir a los usuarios decidir qué datos compartir, con quién y bajo qué condiciones, respetando su autonomía y privacidad.
-- **Protección de datos sensibles**: Implementar medidas técnicas y organizativas para proteger la información sensible, como cifrado y controles de acceso.
+#### Application in the project
 
-#### Módulos clave
+- **User registration**: When collecting personal information and identification documents, it is critical to obtain users’ explicit consent and ensure transparency in how their data is used.
+- **"Happy sharing data" module**: Must allow users to decide what data to share, with whom, and under what conditions, respecting their autonomy and privacy.
+- **Protection of sensitive data**: Implement technical and organizational measures to protect sensitive information, such as encryption and access controls.
 
-- **Bio Registro Verde**: Debe incluir mecanismos para obtener y registrar el consentimiento informado de los usuarios.
-- **Feliz compartiendo datos**: Herramientas para que los usuarios gestionen sus preferencias de privacidad y compartición de datos.
-- **Backoffice**: Funcionalidades para evaluar el cumplimiento de la ley y gestionar solicitudes de acceso, modificación o eliminación de datos.
+#### Key modules
 
+- **Green Bio Registration**: Must include mechanisms to obtain and record users’ informed consent.
+- **Happy sharing data**: Tools for users to manage their privacy and data sharing preferences.
+- **Backoffice**: Features to evaluate legal compliance and manage access, modification, or deletion requests.
 
+### General Data Protection Regulation (GDPR)
 
-### Reglamento General de Protección de Datos (GDPR)
+#### What is it?
 
-#### ¿Qué es?
+The **GDPR** is a regulation of the European Union that sets guidelines for the collection and processing of personal data of individuals within the EU. Although Costa Rica is not a member of the EU, the GDPR is considered an international standard in data protection.
 
-El **GDPR** es una normativa de la Unión Europea que establece directrices sobre la recopilación y procesamiento de datos personales de individuos dentro de la UE. Aunque Costa Rica no es miembro de la UE, el GDPR se considera un estándar internacional en protección de datos.
+#### Application in the project
 
-#### Aplicación en el proyecto
+- **Explicit consent**: Ensure that users understand and agree to how their data will be used.
+- **User rights**: Facilitate access, modification, deletion, and portability of personal data.
+- **Security breach notifications**: Establish protocols to inform authorities and users in case of security violations.
 
-- **Consentimiento explícito**: Asegurar que los usuarios comprendan y acepten cómo se utilizarán sus datos.
-- **Derechos de los usuarios**: Facilitar el acceso, modificación, eliminación y portabilidad de los datos personales.
-- **Notificación de brechas de seguridad**: Establecer protocolos para informar a las autoridades y a los usuarios en caso de violaciones de seguridad.
+#### Key modules
 
-#### Módulos clave
+- **Green Bio Registration**: Implement clear processes for obtaining and managing consent.
+- **Backoffice**: Tools to manage and respond to user requests related to their rights under the GDPR.
+- **Pura Vida Data Lake**: Monitoring and alert systems to detect and respond to potential security breaches.
 
-- **Bio Registro Verde**: Implementar procesos claros para la obtención y gestión del consentimiento.
-- **Backoffice**: Herramientas para gestionar y responder a las solicitudes de los usuarios relacionadas con sus derechos bajo el GDPR.
-- **Pura Vida Data Lake**: Sistemas de monitoreo y alerta para detectar y responder a posibles brechas de seguridad.
+### ISO/IEC 27001 - Information Security Management System
 
+#### What is it?
 
+**ISO/IEC 27001** is an international standard that provides a framework for establishing, implementing, maintaining, and continuously improving an information security management system. Its goal is to protect the confidentiality, integrity, and availability of information.
 
-### ISO/IEC 27001 - Sistema de Gestión de Seguridad de la Información
+#### Application in the project
 
-#### ¿Qué es?
+- **Risk management**: Identify and mitigate information security-related risks.
+- **Security controls**: Implement policies and procedures to protect information from unauthorized access, loss, or damage.
+- **Internal audits**: Conduct regular evaluations to ensure compliance with the standard and continuous improvement.
 
-La **ISO/IEC 27001** es una norma internacional que proporciona un marco para establecer, implementar, mantener y mejorar continuamente un sistema de gestión de seguridad de la información. Su objetivo es proteger la confidencialidad, integridad y disponibilidad de la información.
+#### Key modules
 
-#### Aplicación en el proyecto
+- **Pura Vida Data Lake**: Implement access controls, encryption, and continuous monitoring to protect stored data.
+- **Backoffice**: Tools for incident management, audits, and review of security policies.
+- **API Backend**: Ensure that all programming interfaces comply with the security standards established by the norm.
 
-- **Gestión de riesgos**: Identificar y mitigar riesgos relacionados con la seguridad de la información.
-- **Controles de seguridad**: Implementar políticas y procedimientos para proteger la información contra accesos no autorizados, pérdida o daño.
-- **Auditorías internas**: Realizar evaluaciones periódicas para asegurar el cumplimiento de la norma y mejorar continuamente.
+### Data Governance According to the OECD
 
-#### Módulos clave
+#### What is it?
 
-- **Pura Vida Data Lake**: Implementar controles de acceso, cifrado y monitoreo continuo para proteger los datos almacenados.
-- **Backoffice**: Herramientas para la gestión de incidentes, auditorías y revisión de políticas de seguridad.
-- **API Backend**: Asegurar que todas las interfaces de programación cumplan con los estándares de seguridad establecidos por la norma.
+The **Organisation for Economic Co-operation and Development (OECD)** promotes principles and best practices in data governance, focusing on the responsible and ethical management of data throughout its lifecycle. This includes aspects such as data quality, transparency, privacy, and interoperability.
 
+#### Application in the project
 
+- **Interoperability**: Facilitate efficient and secure data exchange between different entities and systems.
+- **Transparency**: Provide clear information on how data is collected, processed, and used.
+- **Data quality**: Implement mechanisms to ensure that data is accurate, complete, and up to date.
 
-### Gobernanza de Datos según la OCDE
+#### Key modules
 
-#### ¿Qué es?
+- **Happy sharing data**: Tools for the standardization and validation of data shared by users.
+- **Discovering Costa Rica**: Interfaces that allow users to explore and understand the available data, promoting transparency.
+- **Pura Vida Data Lake**: Systems that ensure the integrity and quality of stored data, facilitating its use and reuse.
 
-La **Organización para la Cooperación y el Desarrollo Económicos (OCDE)** promueve principios y buenas prácticas en la gobernanza de datos, enfocándose en la gestión responsable y ética de los datos a lo largo de su ciclo de vida. Esto incluye aspectos como la calidad de los datos, la transparencia, la privacidad y la interoperabilidad.
+### Artificial Intelligence Regulation Bill in Costa Rica
 
-#### Aplicación en el proyecto
+#### What is it?
 
-- **Interoperabilidad**: Facilitar el intercambio de datos entre diferentes entidades y sistemas de manera eficiente y segura.
-- **Transparencia**: Proporcionar información clara sobre cómo se recopilan, procesan y utilizan los datos.
-- **Calidad de los datos**: Implementar mecanismos para asegurar que los datos sean precisos, completos y actualizados.
+The **Artificial Intelligence Regulation Bill in Costa Rica**, identified as File No. 23.771, seeks to establish a legal framework for the ethical, safe, and sustainable development, implementation, and use of artificial intelligence (AI) in the country. This initiative focuses on the protection and promotion of human dignity, human rights, and people’s well-being, in accordance with the 1949 Political Constitution and international treaties to which Costa Rica is a party.
 
-#### Módulos clave
+#### Application in the project
 
-- **Feliz compartiendo datos**: Herramientas para la estandarización y validación de los datos compartidos por los usuarios.
-- **Descubriendo Costa Rica**: Interfaces que permitan a los usuarios explorar y comprender los datos disponibles, promoviendo la transparencia.
-- **Pura Vida Data Lake**: Sistemas que aseguren la integridad y calidad de los datos almacenados, facilitando su uso y reutilización.
+- **Ethical AI development**: Ensure that AI systems used on the platform adhere to ethical principles, avoiding bias and discrimination.
+- **Transparency and explainability**: Implement mechanisms that allow users to understand how and why the AI makes certain decisions.
+- **Protection of personal data**: Ensure that data processing by AI systems complies with privacy and security regulations.
+- **Oversight and accountability**: Establish processes for human oversight of automated decisions and define clear responsibilities in case of errors or malfunctions.
 
-### Proyecto de Ley de Regulación de la Inteligencia Artificial en Costa Rica
+#### Key modules
 
-#### ¿Qué es?
-
-El **Proyecto de Ley de Regulación de la Inteligencia Artificial en Costa Rica**, identificado como Expediente N.º 23.771, busca establecer un marco legal para el desarrollo, implementación y uso ético, seguro y sostenible de la inteligencia artificial (IA) en el país. Esta iniciativa se centra en la protección y promoción de la dignidad, los derechos humanos y el bienestar de las personas, en concordancia con la Constitución Política de 1949 y los tratados internacionales de los que Costa Rica es parte.
-
-#### Aplicación en el proyecto
-
-- **Desarrollo ético de IA**: Asegurar que los sistemas de IA utilizados en la plataforma respeten principios éticos, evitando sesgos y discriminación.
-- **Transparencia y explicabilidad**: Implementar mecanismos que permitan a los usuarios entender cómo y por qué la IA toma determinadas decisiones.
-- **Protección de datos personales**: Garantizar que el tratamiento de datos por parte de sistemas de IA cumpla con las normativas de privacidad y seguridad.
-- **Supervisión y responsabilidad**: Establecer procesos para la supervisión humana de las decisiones automatizadas y definir responsabilidades claras en caso de errores o malfuncionamientos.
-
-#### Módulos clave
-
-- **Bio Registro Verde**: Incorporar validaciones éticas en los procesos de registro y verificación de identidad mediante IA.
-- **Feliz compartiendo datos**: Asegurar que las recomendaciones y análisis generados por IA sean transparentes y comprensibles para los usuarios.
-- **Descubriendo Costa Rica**: Implementar algoritmos de IA que respeten la privacidad y proporcionen explicaciones claras sobre los resultados presentados.
-- **Backoffice**: Desarrollar herramientas para la auditoría y supervisión de los sistemas de IA, permitiendo la detección y corrección de posibles sesgos o errores.
+- **Green Bio Registration**: Incorporate ethical validations in the registration and identity verification processes using AI.
+- **Happy sharing data**: Ensure that AI-generated recommendations and analyses are transparent and understandable to users.
+- **Discovering Costa Rica**: Implement AI algorithms that respect privacy and provide clear explanations for presented results.
+- **Backoffice**: Develop tools for auditing and monitoring AI systems, allowing for the detection and correction of potential biases or errors.
   
 ---
 
