@@ -1,8 +1,36 @@
 # Data-Pura-Vida
 
-## 1. Evaluación de Riesgos
+## 1. Introduction: The Challenge and the Opportunity
+For years, Costa Rica has contended with a significant structural limitation: the absence of a centralized, secure data ecosystem. This fragmentation of information across public and private sectors has hindered evidence-based decision-making, slowed institutional processes, and limited the innovative solutions that could emerge from the strategic use of data. "Data Pura Vida" is born from this challenge, envisioned not merely as a technological platform, but as a strategic piece of national infrastructure designed to unlock Costa Rica's potential in the global digital economy.
 
-### 1.1 Identificacion de riesgos
+### 1.1 Vision
+To transform Costa Rica into a leading digital-first nation, fostering a sovereign data economy where critical government decisions, private sector innovation, and citizen empowerment are driven by democratic, secure, and transparent access to information. "Data Pura Vida" will be the engine that eliminates data silos, creating a single source of truth that fuels a more efficient state, a more dynamic market, and a more informed society, securing the nation's sustainable digital transformation for generations to come.
+### 1.2 Core Guiding Principles 
+- **Total Auditability:** Every action, query, and transaction within the ecosystem will be immutably logged. This ensures absolute traceability, providing a transparent record for accountability and regulatory oversight.
+- **Provider Accountability:** The veracity and quality of information are the direct responsibility of the entity that provides it. The platform's architecture will be designed to enforce this traceability, making the data's origin unequivocally clear.
+- **Controlled Flexibility:** The system will not be a rigid, one-size-fits-all solution. It will provide a powerful and granular ruleset, empowering data owners to precisely configure how their information is shared, modified, and monetized.
+- **Supervised Automation:** We will leverage intelligent automation and AI for maximum efficiency, but will always provide the option for human-in-the-loop review for critical processes, perfectly balancing technological speed with human-led rigor.
+- **Data Sovereignty and Security:** The design will guarantee that users and entities have ultimate control over their data and cryptographic keys. Security is not a feature but the foundation upon which the entire ecosystem's trust is built.
+### 1.3 Key Benefits
+**For Costa Rica and its Government:**
+- **Enhanced Public Policy & Process Optimization:** By centralizing and standardizing disparate data sources, institutions can streamline operations, accelerate processes, and design more effective, evidence-based public policies.
+- **Strengthened Juridical and Commercial Certainty:** The mandatory validation of identities and financial accounts against national banking systems creates a high-trust environment, reducing fraud and strengthening the legal certainty of transactions conducted within the ecosystem.
+- **Transparent and Efficient Governance:** Absolute traceability provides an unprecedented tool for regulatory oversight and fosters a culture of transparency, enabling data-driven governance.
+
+**For the Private Sector:**
+- **A New Frontier for Innovation & Business Models:** Access to a regulated data marketplace will fuel the creation of new technology products and services in fields like fintech, agritech, and health tech. The freedom to set prices and define access models (e.g., public instant access vs. private approval-based) creates a dynamic new revenue stream.
+- **Secure and Risk-Mitigated Collaboration:** The ability to explore detailed metadata and data samples before purchase reduces investment risk. Furthermore, the support for organizations to use their own encryption keys provides an unparalleled level of security for B2B 
+
+**For a a Citizens and Civil Society:**
+- **Empowerment Through Information Access:** Providing access to useful, reliable, and transparent information reinforces democratic principles, enables informed citizen participation, and strengthens social auditing.
+- **Guaranteed User Rights:** The platform enshrines user control, granting individuals the granular right to manage their data lifecycle, including the "right to be forgotten," and ensures fair processes through the option of human review, preventing automated exclusion.
+### 1.4 Unique Value Proposition: An Integral Architecture for Data Sovereignty
+"Data Pura Vida" is distinguished by its holistic approach to creating a national ecosystem built on trust, value, and control. Our unique proposition is delivered through three core architectural pillars:
+
+
+## 2. Evaluación de Riesgos
+
+### 2.1 Identificacion de riesgos
 
 #### Riesgos técnicos:
 | ID  | Riesgo                                       | Descripcion                                                             |
@@ -49,7 +77,7 @@
 | C02 | falta de metadata               | dificulta la interpretaciond de datasets por parte de la IA |
 | C03 | problemas con interoperabilidad | datasets que no se puedan relacionar entre si               |
 
-### 1.2 Analisis de riesgos y evaluacion de los riesgos
+### 2.2 Analisis de riesgos y evaluacion de los riesgos
 Con base en probabilidad (porcentaje) x impacto (menor, medio, mayor, critico) se puede definir que riesgos son los que se deban priorizar
 
 | Nivel        | Criterios                           | Riesgos Asociados                      | Tratamiento            | Acciones a tomar                                                                                                                                                                                                              |
