@@ -191,3 +191,16 @@ The **Artificial Intelligence Regulation Bill in Costa Rica**, identified as Fil
   
 ---
 
+## Macro components diagrams
+
+This section contains hierarchical decomposition diagrams, with a top-down (Macro-to-micro decomposition) functional analysis.
+- **Security**: Authentication/authorization components and data protection layers
+- **Data Lake**: integration and governance
+- **AI**: different interactions with the multiple components
+- **Dashboard**: visualization hierarchy
+- **Catalog**: management system
+- **Core Process Flows**: user and business registration, document validation, purchase transactions, backoffice operations.
+
+### Diagram access
+
+View the full hierarchical diagrams here: [Diagrams](https://app.diagrams.net/#G1yVFPUMvNwK_1kUzsVjszH3h54usKBPj5#%7B%22pageId%22%3A%22HHjvdh1xR4mO0dgaIlwd%22%7D)
