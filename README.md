@@ -34,66 +34,64 @@ To transform Costa Rica into a leading digital-first nation, fostering a soverei
 3. **A Sovereign Ecosystem for Secure Exploration and Monetization:** We have designed a unique dual-environment that masterfully balances the need for data exploration with the imperative for absolute control.
     - The "Descubriendo Costa Rica" (Discovering Costa Rica) portal serves as a secure "sandbox" for analysis. It allows users to build and share rich, interactive dashboards, but is governed by a fundamental rule: it is technically impossible to download raw data or export visualizations. This ensures that sensitive information never leaves the secure environment.
     - This is complemented by a flexible data marketplace within the "Feliz Compartiendo Datos" (Happy Sharing Data) module. Here, data providers exercise full sovereignty, setting their own prices, defining access models, and managing their data's lifecycle, all within a regulated framework that protects both producer and consumer.
-## 2. Evaluación de Riesgos
+## 2. Risk Assessment
 
-### 2.1 Identificacion de riesgos
+### 2.1 Risk Identification
 
-#### Riesgos técnicos:
-| ID  | Riesgo                                       | Descripcion                                                             |
-| --- | -------------------------------------------- | ----------------------------------------------------------------------- |
-| T01 | incompatibilidad de formatos                 | dificultad para procesar datasets de diversos formatos (CSV, JSON, XML) |
-| T02 | fallos en enfoques de procesamiento de datos | perdida o corrupcion de datos durante transformaciones                  |
-| T03 | escalabilidad del Data Lake                  | limitaciones en almacenamiento/consulta con crecimiento de datos        |
-| T04 | rendimiento de visualizaciones               | latencias altas en dashboards complejos / alto trafico                  |
-| T05 | integración con sistemas legacy              | incompatibilidad con APIs/bases de datos de instituciones publicas      |
-| T06 | disponibilidad del sistema                   | caidas cuando haya alta demanda                                         |
-| T07 | complejidad de la IA                         | la implementacion tenga baja precision                                  |
+#### Technical Risks:
+| ID  | Risk                                   | Description                                                        |
+| --- | -------------------------------------- | ------------------------------------------------------------------ |
+| T01 | Format incompatibility                 | Difficulty processing datasets of diverse formats (CSV, JSON, XML) |
+| T02 | Failures in data processing approaches | Data loss or corruption during transformations                     |
+| T03 | Data Lake scalability                  | Storage/query limitations with data growth                         |
+| T04 | Visualization performance              | High latency in complex dashboards / high traffic                  |
+| T05 | Legacy system integration              | Incompatibility with public institutions' APIs/databases           |
+| T06 | System availability                    | Downtime during peak demand                                        |
+| T07 | AI complexity                          | Implementation may have low accuracy                               |
 
-#### Riesgos de seguridad:
-| ID  | Riesgo                     | Descripcion                                                        |
-| --- | -------------------------- | ------------------------------------------------------------------ |
-| S01 | brechas de datos sensibles | exposicion accidental de informacion personal/confidencial         |
-| S02 | gestion de identidad       | fallos en autenticacion MFA o suplantacion de identidad            |
-| S03 | cifrado inadecuado         | vulnerabilidad de los datos que se encuentran en reposo / transito |
-| S04 | privilegio de accesos      | abusos de permisos de administrador                                |
-| S05 | falta de auditoria         | insuficiencia en trazabilida de accesos / cambios                  |
+#### Security Risks:
+| ID  | Risk                    | Description                                              |
+| --- | ----------------------- | -------------------------------------------------------- |
+| S01 | Sensitive data breaches | Accidental exposure of personal/confidential information |
+| S02 | Identity management     | MFA authentication failures or identity spoofing         |
+| S03 | Inadequate encryption   | Vulnerability of data at rest/in transit                 |
+| S04 | Access privileges       | Administrator permission abuse                           |
+| S05 | Lack of auditing        | Insufficient traceability of access/changes              |
 
-#### Riesgos legales y cumplimiento:
-| ID  | Riesgo                  | Descripcion                                                   |
-| --- | ----------------------- | ------------------------------------------------------------- |
-| L01 | incumplimiento de leyes | sanciones por el manejo inadecuado de la informacion personal |
-| L02 | propiedad de data       | disputas acerca del derecho de datasets compartidos           |
+#### Legal & Compliance Risks:
+| ID  | Risk                     | Description                                    |
+| --- | ------------------------ | ---------------------------------------------- |
+| L01 | Non-compliance with laws | Penalties for mishandling personal information |
+| L02 | Data ownership           | Disputes over rights to shared datasets        |
 
-#### Riesgos operacionales:
-| ID  | Riesgo                     | Descripcion                                                          |
-| --- | -------------------------- | -------------------------------------------------------------------- |
-| O01 | resistencia a cambio       | rechazo por parte de instituciones o individuos                      |
-| O02 | dependencia en proveedores | Cloud outages (interrupciones en la nube) o cambios en APIs criticos |
+#### Operational Risks:
+| ID  | Risk                 | Description                              |
+| --- | -------------------- | ---------------------------------------- |
+| O01 | Resistance to change | Rejection by institutions or individuals |
+| O02 | Vendor dependency    | Cloud outages or critical API changes    |
 
-#### Riesgos financieros:
-| ID  | Riesgo                         | Descripcion                                  |
-| --- | ------------------------------ | -------------------------------------------- |
-| F01 | altos costos operativos        | infraestructura mas cara de lo presupuestado |
-| F02 | modelo de monetizacion fallido | adopcion baja de los datasets de pago        |
+#### Financial Risks:
+| ID  | Risk                      | Description                                 |
+| --- | ------------------------- | ------------------------------------------- |
+| F01 | High operational costs    | Infrastructure more expensive than budgeted |
+| F02 | Failed monetization model | Low adoption of paid datasets               |
 
-#### Riesgos de calidad:
-| ID  | Riesgo                          | Descripcion                                                 |
-| --- | ------------------------------- | ----------------------------------------------------------- |
-| C01 | incoinsistencia de datos        | errores en las fuentes, lo cual afecta el analisis          |
-| C02 | falta de metadata               | dificulta la interpretaciond de datasets por parte de la IA |
-| C03 | problemas con interoperabilidad | datasets que no se puedan relacionar entre si               |
+#### Quality Risks:
+| ID  | Risk                    | Description                              |
+| --- | ----------------------- | ---------------------------------------- |
+| C01 | Data inconsistency      | Source errors affecting analysis         |
+| C02 | Lack of metadata        | Hinders AI interpretation of datasets    |
+| C03 | Interoperability issues | Datasets that cannot be cross-referenced |
 
-### 2.2 Analisis de riesgos y evaluacion de los riesgos
-Con base en probabilidad (porcentaje) x impacto (menor, medio, mayor, critico) se puede definir que riesgos son los que se deban priorizar
+### 2.2 Risk Analysis and Evaluation  
+Based on probability (%) × impact (minor, medium, major, critical), priority risks are defined:
 
-| Nivel        | Criterios                           | Riesgos Asociados                      | Tratamiento            | Acciones a tomar                                                                                                                                                                                                              |
-| ------------ | ----------------------------------- | -------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Crítico**  | Probabilidad >70% + Impacto Crítico | S01, L01, T02                          | Mitigación inmediata   | - Implementar cifrado + validacion de tokens (S01)<br>- Auditoría legal  (L01)<br>- Pipeline con validacion en multiples fases (T02)                                                                                                  |
-| **Alto**     | Probabilidad 30-70% + Impacto Mayor | T01, T03, S02, S03, O01                | Mitigación planificada | - Estandarización de diversos formatos (T01)<br>- Autoescalado con base en la demanda (T03)<br>- Revisión de permisos (S02/S03)<br>- Generacion de casos de exito y demostracion de beneficios (O01)                          |
-| **Moderado** | Probabilidad 10-30% + Impacto Medio | T04, T05, S04, F01, C01                | Monitoreo activo       | - Cache de visualizaciones (T04)<br>- mecanismos de adaptación para APIs legacy (como middleware) (T05)<br>- Alertas por uso de privilegios (S04)<br>- Modelo de costos dinámico (F01)<br>- Validación cruzada de datos (C01) |
-| **Bajo**     | Probabilidad <10% + Impacto Menor   | T06, T07, S05, L02, O02, F02, C02, C03 | Aceptación controlada  | - Documentar en registro de riesgos<br>- Incluir en revisiones                                       
-
----
+| Level        | Criteria                           | Associated Risks                       | Treatment             | Actions to Take                                                                                                                                                                                |
+| ------------ | ---------------------------------- | -------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Critical** | Probability >70% + Critical Impact | S01, L01, T02                          | Immediate mitigation  | - Implement encryption + token validation (S01)<br>- Legal audit (L01)<br>- Multi-phase validation pipeline (T02)                                                                              |
+| **High**     | Probability 30-70% + Major Impact  | T01, T03, S02, S03, O01                | Planned mitigation    | - Standardize formats (T01)<br>- Demand-based autoscaling (T03)<br>- Permission reviews (S02/S03)<br>- Generate success cases and demonstrate benefits (O01)                                   |
+| **Moderate** | Probability 10-30% + Medium Impact | T04, T05, S04, F01, C01                | Active monitoring     | - Visualization caching (T04)<br>- Legacy API adaptation mechanisms (e.g., middleware) (T05)<br>- Privilege use alerts (S04)<br>- Dynamic cost modeling (F01)<br>- Cross-data validation (C01) |
+| **Low**      | Probability <10% + Minor Impact    | T06, T07, S05, L02, O02, F02, C02, C03 | Controlled acceptance | - Document in risk register<br>- Include in reviews                                                                                                                                            |
 
 ## Relevant Laws and Standards for the **Data Pura Vida** Platform
 
