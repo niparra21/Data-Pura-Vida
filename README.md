@@ -200,5 +200,68 @@ This section contains hierarchical decomposition diagrams, with a top-down (Macr
 - **Core Process Flows**: user and business registration, document validation, purchase transactions, backoffice operations.
 
 ### Diagram access
-
 View the full hierarchical diagrams here: [Diagrams](https://app.diagrams.net/#G1yVFPUMvNwK_1kUzsVjszH3h54usKBPj5#%7B%22pageId%22%3A%22HHjvdh1xR4mO0dgaIlwd%22%7D)
+
+### Component: Data Lake
+
+#### General Overview
+
+The **Data Lake** is the core of the *Data Pura Vida* ecosystem. It serves as the central repository for structured and semi-structured data, enabling integration, transformation, and analysis through intelligent services. Its hierarchical design ensures secure storage, versioning, dataset relationships, and full traceability, while complying with the system’s security and data governance requirements.
+
+The component is decomposed into five main functional blocks:
+
+#### 1. Input
+
+Responsible for receiving data from multiple sources. Supports:
+
+- Automatic ingestion via:
+  - File uploads (Excel, CSV, JSON)
+  - Connectors to SQL / NoSQL databases
+  - External APIs
+- Manual data entry
+- Source and upload location registration
+- Structure and format validation
+- Metadata collection for AI processing
+
+#### 2. Storage
+
+Manages safe and versioned data retention:
+
+- Dataset version control
+- Relationships between datasets via linked columns
+- Delta load management:
+  - Differential fields
+  - Timed pull configuration
+  - Event-triggered callbacks
+
+#### 3. Transformation (ETDL)
+
+The smart data processing engine based on AI, composed of:
+
+- **Extraction**: capturing new and existing data
+- **Transformation**: normalization, schema redesign, automatic linking of datasets
+- **Cleaning**: detection and correction of errors via AI
+- **Modeling and final loading** into the system
+
+#### 4. Delivery
+
+Regulates secure and controlled access to processed data:
+
+- Restricted access based on role, time, volume, or entity
+- Internal dashboards for data visualization (no export allowed)
+- Optional integration with AI models (vector format delivery)
+- Real-time metrics on data usage and limits
+
+#### 5. Security
+
+A transversal system that guarantees data protection and traceability:
+
+- Encryption at rest, in transit, and at the application level
+- Role-Based Access Control (RBAC) and Row-Level Security (RLS)
+- Multifactor authentication (MFA)
+- Dynamic access policies per user/entity type
+- Access and modification logging for full auditability
+
+#### Architectural Justification
+
+This hierarchical design was created based on system requirements and best practices in modular software architecture. Each subcomponent is a self-contained unit with clear responsibilities, supporting scalability, maintainability, and full data traceability. The Data Lake interacts with other major components (Backend API, Public Portal, and Backoffice) through secure and auditable integration layers, aligned with modern standards of data governance and information security.
