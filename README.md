@@ -84,14 +84,31 @@ To transform Costa Rica into a leading digital-first nation, fostering a soverei
 | C03 | Interoperability issues | Datasets that cannot be cross-referenced |
 
 ### 2.2 Risk Analysis and Evaluation  
-Based on probability (%) × impact (minor, medium, major, critical), priority risks are defined:
+**Criteria**: Probability (Low <30%, Medium 30-70%, High >70%) × Impact (Minor, Medium, Major, Critical).  
 
-| Level        | Criteria                           | Associated Risks                       | Treatment             | Actions to Take                                                                                                                                                                                |
-| ------------ | ---------------------------------- | -------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Critical** | Probability >70% + Critical Impact | S01, L01, T02                          | Immediate mitigation  | - Implement encryption + token validation (S01)<br>- Legal audit (L01)<br>- Multi-phase validation pipeline (T02)                                                                              |
-| **High**     | Probability 30-70% + Major Impact  | T01, T03, S02, S03, O01                | Planned mitigation    | - Standardize formats (T01)<br>- Demand-based autoscaling (T03)<br>- Permission reviews (S02/S03)<br>- Generate success cases and demonstrate benefits (O01)                                   |
-| **Moderate** | Probability 10-30% + Medium Impact | T04, T05, S04, F01, C01                | Active monitoring     | - Visualization caching (T04)<br>- Legacy API adaptation mechanisms (e.g., middleware) (T05)<br>- Privilege use alerts (S04)<br>- Dynamic cost modeling (F01)<br>- Cross-data validation (C01) |
-| **Low**      | Probability <10% + Minor Impact    | T06, T07, S05, L02, O02, F02, C02, C03 | Controlled acceptance | - Document in risk register<br>- Include in reviews                                                                                                                                            |
+| Risk ID | Level    | Actions to Take                                                                                                       |
+| ------- | -------- | --------------------------------------------------------------------------------------------------------------------- |
+| **S01** | Critical | - Apply AES-256 encryption for sensitive data<br>- Restrict access using RBAC and RLS |
+| **L01** | Critical | - Validate consent during registration                                                                                |
+| **T02** | Critical | - Use the project's AI engine for data validation during loading (ETDL)<br>- Maintain regular backups                 |
+| **T03** | High     | - Use scalable cloud storage<br>- Automatically clean unused data                                       |
+| **S02** | High     | - Enforce MFA and liveness checks for registrations                                                                   |
+| **S03** | High     | - Encrypt data in transit with TLS<br>- Use tripartite keys as specified                                              |
+| **O01** | High     | - Train officials on platform usage<br>- Show success cases with open data                                            |
+| **T01** | Moderate | - Convert files to standard formats (CSV/JSON) using built-in tools                                                   |
+| **T05** | Moderate | - Create adapters for common APIs                                                          |
+| **C01** | Moderate | - Use system AI to detect duplicates                                                                                  |
+| **F01** | Moderate | - Monitor costs monthly                                                                                               |
+| **T04** | Moderate | - Optimize queries with indexes                                                                                       |
+| **S04** | Moderate | - Review admin permissions every 3 months<br>- Log all actions                                                        |
+| **T07** | Low      | - Allow users to manually correct AI errors                                                                           |
+| **T06** | Low      | - Use load balancers to prevent downtime                                                                              |
+| **L02** | Low      | - Include clear usage agreements when uploading datasets                                                              |
+| **O02** | Low      | - Maintain contracts with multiple cloud providers                                                                    |
+| **F02** | Low      | - Offer free sample datasets                                                                                          |
+| **C02** | Low      | - Require column descriptions when uploading data                                                                     |
+| **C03** | Low      | - Use relationship fields between datasets                                                                            |
+| **S05** | Low      | - Maintain access logs for extended periods                                                                                                                                                                                                      |
 
 ## Relevant Laws and Standards for the **Data Pura Vida** Platform
 
