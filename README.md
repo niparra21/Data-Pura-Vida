@@ -344,3 +344,62 @@ This hierarchical design was created based on system requirements and best pract
 | Publication | - Public catalog<br>- Usage dashboard                         | - Configures license (open/restricted)<br>- Monitors downloads | *"Our data is helping researchers."*<br>*"We should update this quarterly."*          | Automatic update reminders               |
 
 ![Imagen del Customer Journey #3](./CustomerJourney3.png)
+
+
+## Collaborative Pattern  
+This pattern is based on the idea that a complex problem is solved more efficiently and robustly through the cooperation of multiple specialized agents, rather than a single monolithic agent. Each agent has a specific skill or knowledge, and all collaborate by sharing information in a common space to arrive at a comprehensive solution.  
+
+### Metaphor: "The Antique Furniture Restoration Workshop"  
+Imagine our AI system is a prestigious artisanal workshop. Its specialty is taking batches of old, mismatched, and forgotten furniture and transforming them into coherent, optimized, and highly valuable display sets.  
+
+### 1. Input: New Datasets and Metadata  
+- **Metaphor:** The Newly Arrived Furniture Batch and the Owner's Notes.  
+- **Description:** A truck arrives at the workshop and unloads a set of dusty and disorganized furniture (the datasets). Along with the furniture, the driver hands over a folder with notes (the metadata). Some notes are clear ("Dining table, mahogany"), others are cryptic ("Grandpa's box, has a number underneath", "Chairs from the good set"). This is the raw material and context the workshop must work with.  
+
+### 2. Controller Agent  
+- **Metaphor:** The Master Restorer (Workshop Foreman).  
+- **Description:** This is the person who receives the batch of furniture and the notes. They don’t sand or varnish themselves but have the complete vision. Their job is to initiate the project, call their specialists, and ensure everyone works in a coordinated manner to achieve the goal: "Team, from this batch, we need to create a functional and aesthetic dining set." They are the ones who will make the final decision on the restoration plan.  
+
+### 3. Shared Memory / Blackboard  
+- **Metaphor:** The Central Workshop Blackboard.  
+- **Description:** This is the heart of the operation. It’s a large whiteboard mounted on the main wall where the entire project is managed. The Master Restorer writes the project name at the top. As each specialist works, they go to the board and add their findings: sketches, measurements, style analysis, joining proposals. Everyone can see it, read each other’s contributions, and add their own, ensuring the team works with the same information.  
+
+### 4. Semantic Analyst Agent  
+- **Metaphor:** The Art and Antiques Historian.  
+- **Description:** This specialist doesn’t focus on the wood but on the soul of the furniture. Using the owner’s notes and their own expertise, they examine the styles, engravings, and small details to understand the meaning and origin. They note on the board: "I’ve determined that the 'dining table' and the 'chairs from the good set' are Costa Rican neoclassical style. The 'grandpa’s box' with the number underneath appears to be a piece from the same era and maker, likely a sideboard. I propose grouping these three items conceptually."  
+
+### 5. LLM / AI Service  
+- **Metaphor:** The Vast Reference Library of Art History.  
+- **Description:** The Art Historian doesn’t know everything by heart. When they encounter an engraving or joint type they don’t recognize (input), they go to their office, which contains an immense library with history books, auction catalogs, and artisan records (the LLM). They consult these books to precisely identify the style and era (output), then return to the board with validated knowledge.  
+
+### 6. Structural Analyst Agent  
+- **Metaphor:** The Structural Carpenter.  
+- **Description:** This craftsman is purely technical. They ignore the style and focus on the physics of the furniture. They measure each piece, check the integrity of the joints, identify the type of wood, and look for unique identifiers. They note on the board: "Table: 1.80m x 0.90m, oak. Chairs: cedar. The number under the sideboard is 'SN-78-CR,' unique and not repeated in the batch (potential primary key). The chairs have a notch that perfectly matches the table’s edge (potential structural relationship)."  
+
+### 7. Relationship Agent  
+- **Metaphor:** The Assembler and Designer.  
+- **Description:** This specialist connects the dots. They look at the board and see the Historian’s notes ("these pieces are from the same concept") and the Carpenter’s notes ("these pieces fit physically"). Then, they draw a detailed blueprint on the board and write: "DESIGN PROPOSAL: Merge the table, chairs, and sideboard into a single set called 'Neoclassical Dining Set.' The 'SN-78-CR' field of the sideboard will be the primary key of the set. Rename the 'number' column to 'Furniture_ID' in all pieces for standardization."  
+
+### 8. Code Generator Agent  
+- **Metaphor:** The Technical Scribe (Instruction Manual Writer).  
+- **Description:** The Master Restorer reviews all proposals on the board and gives final approval. They call the Technical Scribe and say, "The plan is approved. Please draft the final assembly manual, step by step, so the apprentices can execute it without errors." The scribe takes the blueprints and notes and translates them into a clear and precise document.  
+
+### 9. Result Output: Transformation Plan and Execution Script (SQL/DDL)  
+- **Metaphor:** The Detailed Final Assembly Manual.  
+- **Description:** This is the final product of the design process. It’s a bound manual containing the material list, detailed blueprints, and numbered step-by-step instructions for restoration and assembly (the SQL/DDL script). Any craftsman in the workshop can take this manual and build the dining set exactly as designed by the team of specialists.  
+
+### Functional Explanation:  
+1. **Input:** Receives datasets with their metadata.  
+2. **Controller Agent:** Starts the work and distributes it among specialized agents.  
+3. **Shared Memory:** Shared knowledge where all agents write and read.  
+4. **Semantic Analyst Agent:** Groups data based on meaning, type, or role.  
+5. **LLM:** Uses LLM models to fill missing knowledge, verify hypotheses, or name entities.  
+6. **Structural Analyst Agent:** Checks column sizes, data types, etc.  
+7. **Relationship Agent:** Based on the analysts' findings, proposes a logical relational structure: tables, foreign keys, etc.  
+8. **Code Generator Agent:** Generates the code representing the approved design.  
+9. **Output:** Formal document or executable script ready for another system (or human) to implement.  
+
+### Diagram:  
+[Collaborative pattern](https://drive.google.com/file/d/19RyEgnIBL0t_Xn1qkGxolLqWiGIJQ1Sx/view?usp=sharing)
+
+![Imagen del Collaborative Pattern #3](./CollaborativePattern.png)
