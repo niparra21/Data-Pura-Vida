@@ -209,12 +209,13 @@ The **Artificial Intelligence Regulation Bill in Costa Rica**, identified as Fil
 ## Macro components diagrams
 
 This section contains hierarchical decomposition diagrams, with a top-down (Macro-to-micro decomposition) functional analysis.
-- **Security**: Authentication/authorization components and data protection layers
-- **Data Lake**: integration and governance
-- **AI**: different interactions with the multiple components
-- **Dashboard**: visualization hierarchy
-- **Catalog**: management system
-- **Core Process Flows**: user and business registration, document validation, purchase transactions, backoffice operations.
+-   **Data Lake**: Core data integration, storage, processing, and governance.
+-   **Security**: Platform-wide authentication, authorization, key management, and data protection layers.
+-   **Inteligencia Artificial (AI)**: Embedded AI capabilities enhancing various system functions.
+-   **Dashboard (Descubriendo Costa Rica)**: User interface for data exploration and visualization.
+-   **Catálogo (Catalog)**: System for discovering and managing dataset information.
+-   **Back Office**: Administrative portal for system management and oversight.
+-   *(Note: Key processes like Document Validation and Purchases are detailed under relevant components or their own sections where they represent significant, distinct flows shown in diagrams.)*
 
 ### Diagram access
 View the full hierarchical diagrams here: [Diagrams](https://app.diagrams.net/#G1yVFPUMvNwK_1kUzsVjszH3h54usKBPj5#%7B%22pageId%22%3A%22HHjvdh1xR4mO0dgaIlwd%22%7D)
@@ -223,9 +224,11 @@ View the full hierarchical diagrams here: [Diagrams](https://app.diagrams.net/#G
 
 #### General Overview
 
-The **Data Lake** is the core of the *Data Pura Vida* ecosystem. It serves as the central repository for structured and semi-structured data, enabling integration, transformation, and analysis through intelligent services. Its hierarchical design ensures secure storage, versioning, dataset relationships, and full traceability, while complying with the system’s security and data governance requirements.
+The **Data Lake** is the core of the *Data Pura Vida* ecosystem. It serves as the central repository for structured and semi-structured data, enabling integration, transformation, and analysis through intelligent services. Its design (see "Data Lake" diagram) ensures secure storage, versioning, dataset relationships, and full traceability, complying with security and data governance requirements.
 
-The component is decomposed into five main functional blocks:
+![Data Lake Design Overview](assets/diagrams/descomposicionDelSistema.png)
+
+The component's main functional areas, derived from its decomposition diagram, are:
 
 #### 1. Input
 
@@ -282,6 +285,139 @@ A transversal system that guarantees data protection and traceability:
 #### Architectural Justification
 
 This hierarchical design was created based on system requirements and best practices in modular software architecture. Each subcomponent is a self-contained unit with clear responsibilities, supporting scalability, maintainability, and full data traceability. The Data Lake interacts with other major components (Backend API, Public Portal, and Backoffice) through secure and auditable integration layers, aligned with modern standards of data governance and information security.
+
+---
+### Component: Security
+
+#### General Overview
+
+The **Security** component provides platform-wide mechanisms for authentication, authorization, cryptographic key management, data protection, and auditing, ensuring a secure operational environment for all *Data Pura Vida* functionalities. (Refer to "Seguridad" diagram for detailed structure).
+
+#### Key Capabilities
+
+-   **Autenticación Multifactor (MFA) y Biométrica**:
+    -   Implements advanced authentication methods including MFA, biometrics, and proof of life for user registration ("bio registro verde") and ongoing access.
+    -   Includes OTP and potentially voice recognition.
+-   **Control de Acceso Basado en Roles (RBAC) Unificado**:
+    -   Manages roles and permissions centrally for users and organizations.
+    -   Supports multi-organization account management from a single user account.
+-   **Gestión de Claves Criptográficas y Custodia Tripartita**:
+    -   Generates and manages symmetric and asymmetric keys for entities.
+    -   Secures master keys via a tripartite system (Data Pura Vida + 2 custodians) and utilizes a secure vault.
+-   **Seguridad de Datos en Tránsito y Reposo**:
+    -   Ensures encryption for data in transit (e.g., API communications) and at rest across various storage systems (databases, Data Lake).
+-   **Políticas de Acceso y Restricciones**:
+    -   Enforces geographic IP restrictions (Costa Rica only, with whitelists).
+    -   Manages access policies dynamically based on context and user/entity type.
+-   **Auditoría de Seguridad**:
+    -   Logs critical security events, access attempts, and administrative actions.
+-   **Prevención de Exportación de Datos**:
+    -   Enforces rules like blocking dashboard data/graphic exports, a key security requirement.
+
+---
+### Component: Inteligencia Artificial (AI)
+
+#### General Overview
+
+**Inteligencia Artificial (AI)** is integrated across *Data Pura Vida* to automate complex tasks, derive insights, enhance user experience, and improve data quality and security. (Refer to "Inteligencia Artificial" diagram).
+
+#### Key Application Areas
+
+-   **Validación de Documentos ("bio registro verde")**:
+    -   Automates verification of document authenticity, completeness, and data extraction.
+    -   Applies intelligent validation rules based on user/entity type.
+-   **Procesamiento y Gobernanza en el Data Lake**:
+    -   Assists in the ETDL pipeline: detecting duplicities, optimizing data relationships, and adjusting data models.
+    -   Suggests metadata for datasets to improve cataloging.
+-   **Asistencia en Dashboards ("Descubriendo Costa Rica")**:
+    -   Enables generation of visualizations via natural language prompts.
+    -   Potentially extracts and presents key insights automatically.
+-   **Monitoreo y Detección de Anomalías**:
+    -   Enhances security by analyzing patterns in data access, transfers, and system logs to identify potential threats or misuse.
+
+---
+### Component: Dashboard (Descubriendo Costa Rica)
+
+#### General Overview
+
+The **Dashboard** is the user's window into the "Data Pura Vida" ecosystem, enabling exploration, visualization, and analysis of accessible data in a secure, controlled environment that strictly prohibits direct data export. (Refer to "Dashboard" diagram).
+
+#### Key Features
+
+-   **Construcción de Dashboards**:
+    -   Manual drag-and-drop interface.
+    -   AI-assisted creation via prompts for automated visualization generation.
+    -   Users can save and manage their personalized dashboards.
+-   **Visualización de Datos**: Supports diverse representations (tables, charts, trends, predictions).
+-   **Gestión de Consumo de Datos Pagados**:
+    -   Real-time monitoring of usage (volume, queries, time).
+    -   Enforcement of limits and options for renewal/extension.
+    -   Accessible history of transactions and consumption.
+-   **Seguridad Anti-Exportación**: All visualizations and data interactions are confined within the portal; no download of raw data or graphics is permitted.
+-   **Interfaz Segura para Modelos de IA**: Provides a controlled pathway for using platform data to feed AI models, potentially via vectorial data, minimizing direct data exposure.
+-   **Compartir Dashboards**: Option to share dashboards with other users or make them publicly visible within the platform.
+
+---
+### Component: Catálogo (Catalog)
+
+#### General Overview
+
+The **Catálogo** allows users to discover, understand, and manage information about datasets available within the *Data Pura Vida* ecosystem. It serves as the entry point for accessing or initiating the purchase of datasets. (Refer to "Catálogo" diagram).
+
+#### Key Functionalities
+
+-   **Exploración y Búsqueda de Datasets**:
+    -   Filtering by name, category, public/private status, free/paid model.
+-   **Ficha Detallada del Dataset**:
+    -   Provides comprehensive metadata: description, columns (and AI-useful metadata about them), data owner, update frequency.
+    -   Displays terms of use, price (if applicable), duration of access, and conditions of cobro.
+-   **Integración con el Proceso de Compra**: Facilitates transition to purchasing access for non-free datasets.
+
+---
+### Proceso de Compra (Dataset Acquisition)
+
+#### General Overview
+This process, detailed in the "Compras" diagram, outlines how users acquire access to datasets, particularly those with an associated cost, as part of the "Feliz compartiendo datos" functionality.
+
+#### Key Steps
+
+1.  **Selección y Revisión**: User identifies a dataset (typically via the **Catálogo**).
+2.  **Captura de Información de Pago**: Securely collects payment details (credit/debit card, national payment mechanisms, IBAN for certain setups).
+3.  **Validación y Procesamiento del Pago**.
+4.  **Asignación de Permisos**: Upon successful payment, access rights to the dataset are automatically granted according to the agreed terms (time, volume, frequency).
+5.  **Notificación**: User receives confirmation of the transaction and access activation.
+6.  **Auditoría**: All purchase transactions are logged for user review and system auditing.
+
+---
+### Component: Back Office
+
+#### General Overview
+
+The **Back Office** portal is the administrative backbone of *Data Pura Vida*, providing authorized staff with the tools for system management, user and entity oversight, data governance, operational monitoring, and compliance enforcement. (Refer to "Back Office" diagram).
+
+#### Key Administrative Functions
+
+-   **Gestión de Usuarios y Entidades**:
+    -   Onboarding, validation, and role management (RBAC) for all registered entities and internal users.
+    -   Management of security aspects like key custodians for the tripartite system.
+-   **Configuración del Sistema y Reglas de Negocio**:
+    -   Defining and managing rules for data loading, validation, and dataset structuring.
+    -   Configuration of connectivity to external data sources.
+-   **Supervisión y Monitoreo Operativo**:
+    -   Real-time monitoring of platform services, data pipelines, ETL(D) processes, and system health.
+    -   Generation of operational reports, usage statistics, data quality metrics, and anomaly detection.
+-   **Gobernanza y Cumplimiento**:
+    -   Comprehensive audit trails of all system operations and administrative actions.
+    -   Tools for extracting information for legal or regulatory purposes (under authorization).
+    -   Ensuring adherence to data protection laws (e.g., Ley 8968) and standards.
+-   **Gestión de Contenido y Datasets**:
+    -   Activating, deactivating, editing, and supervising data objects within the platform.
+
+*(Note: The "Validación de Documentos" process, while having its own diagram, is a critical sub-function primarily within the "bio registro verde" (user registration) workflow, heavily utilizing "AI" and "Security" components, and managed/audited via the "Back Office".)*
+
+---
+
+This comprehensive decomposition, visually represented in the linked diagrams and aligned with the detailed requirements, forms a clear foundation for the strategic selection of technologies, ensuring that all functionalities and objectives of the Data Pura Vida ecosystem will be effectively implemented and supported.
 
 ## Customer Journeys
 
