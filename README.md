@@ -115,99 +115,65 @@ To transform Costa Rica into a leading digital-first nation, fostering a soverei
 
 ---
 
-## Relevant Laws and Standards for the **Data Pura Vida** Platform
+## Technical Policies for the **Data Pura Vida** Platform
 
-## Law 8968 - Law on the Protection of Individuals Regarding the Processing of Their Personal Data (Costa Rica)
+This section defines how each legal and regulatory framework is technically enforced within the **Data Pura Vida** platform. It translates abstract legal principles into actionable rules, showing exactly **what to implement**, **where**, and **how**, for system developers and security teams.
 
-### What is it?
 
-**Law 8968**, published in Costa Rica, establishes the legal framework for the protection of individuals' personal data. This law guarantees individuals' fundamental rights regarding the processing of their personal information, ensuring their privacy and control over their data.
+### Law 8968 – Costa Rica's Personal Data Protection
 
-### Application in the project
+| Policy | Module | Technical Enforcement |
+|--------|--------|------------------------|
+| Informed consent | Green Bio Registration | Mandatory checkbox field + timestamp in DB; stored in audit trail |
+| Data transparency | Happy Sharing Data | UI for data usage preferences; stored per user |
+| Sensitive data access control | Data Lake, Security | RLS (Row-Level Security) by user/entity ID |
+| Data deletion by request | Backoffice | `DELETE /user-data/:id` API with admin approval + MFA |
+| Data encryption | DB layer | AES-256 encryption at rest + KMS-managed keys |
 
-- **User registration**: When collecting personal information and identification documents, it is critical to obtain users’ explicit consent and ensure transparency in how their data is used.
-- **"Happy sharing data" module**: Must allow users to decide what data to share, with whom, and under what conditions, respecting their autonomy and privacy.
-- **Protection of sensitive data**: Implement technical and organizational measures to protect sensitive information, such as encryption and access controls.
 
-### Key modules
+### GDPR – General Data Protection Regulation
 
-- **Green Bio Registration**: Must include mechanisms to obtain and record users’ informed consent.
-- **Happy sharing data**: Tools for users to manage their privacy and data sharing preferences.
-- **Backoffice**: Features to evaluate legal compliance and manage access, modification, or deletion requests.
+| Policy | Module | Technical Enforcement |
+|--------|--------|------------------------|
+| Right to access/port data | Backoffice, API | `GET /user-data/export` returns JSON; signed |
+| Right to erasure | Backoffice | Soft delete with `deleted_at`; purged via background task |
+| Consent registry | Registration | Stored in `consents` table with `user_id`, `policy_id`, `timestamp` |
+| Breach notification | Security, Notifications | Alert triggered via CloudWatch or App Insights; auto-email to users |
 
-## General Data Protection Regulation (GDPR)
 
-### What is it?
+### ISO/IEC 27001 – Information Security Management
 
-The **GDPR** is a regulation of the European Union that sets guidelines for the collection and processing of personal data of individuals within the EU. Although Costa Rica is not a member of the EU, the GDPR is considered an international standard in data protection.
+| Policy | Module | Technical Enforcement |
+|--------|--------|------------------------|
+| Access control | Security, Backoffice | IAM roles + RBAC + RLS enforced at endpoint and DB levels |
+| Audit of changes and access | Audit system | Logs per user/event/resource; stored in `audit_logs` table |
+| Encryption at rest and transit | Security | HTTPS + AES-256 + TLS 1.2+ |
+| Key lifecycle management | Security | Rotation, expiry, revocation; managed via Key Vault |
+| Risk alerts and evaluations | Security, AI | Monitoring with anomaly detection and metrics dashboards |
 
-### Application in the project
 
-- **Explicit consent**: Ensure that users understand and agree to how their data will be used.
-- **User rights**: Facilitate access, modification, deletion, and portability of personal data.
-- **Security breach notifications**: Establish protocols to inform authorities and users in case of security violations.
+### OECD – Data Governance Principles
 
-### Key modules
+| Policy | Module | Technical Enforcement |
+|--------|--------|------------------------|
+| Interoperability | Happy Sharing Data | RESTful APIs documented via OpenAPI (Swagger); support for JSON/CSV |
+| Data flow transparency | Dashboard, Audit | Graph of data lineage per dataset; log of access per user |
+| Data quality controls | ETDL (Data Lake) | AI-powered validation for duplicates, missing fields, etc. |
+| Dataset documentation | Catalog | Auto-generated metadata with structure, relations, and usage terms |
 
-- **Green Bio Registration**: Implement clear processes for obtaining and managing consent.
-- **Backoffice**: Tools to manage and respond to user requests related to their rights under the GDPR.
-- **Pura Vida Data Lake**: Monitoring and alert systems to detect and respond to potential security breaches.
 
-## ISO/IEC 27001 - Information Security Management System
+### AI Regulation Bill (Exp. 23.771 – Costa Rica)
 
-### What is it?
+| Policy | Module | Technical Enforcement |
+|--------|--------|------------------------|
+| Explainability of AI | Dashboard (Prompt AI) | Prompt logs + human-readable explanation field |
+| Oversight of AI decisions | Backoffice, Audit | All AI actions tagged `triggered_by_AI`; viewable in control panel |
+| Ethical validation in registration | AI + Registration | Use of traceable AI services (e.g., Azure Form Recognizer) with metadata |
+| AI traceability | Security, Audit | Logs per inference: `input`, `output`, `model`, `timestamp`, `confidence` |
 
-**ISO/IEC 27001** is an international standard that provides a framework for establishing, implementing, maintaining, and continuously improving an information security management system. Its goal is to protect the confidentiality, integrity, and availability of information.
+### Summary
 
-#### Application in the project
-
-- **Risk management**: Identify and mitigate information security-related risks.
-- **Security controls**: Implement policies and procedures to protect information from unauthorized access, loss, or damage.
-- **Internal audits**: Conduct regular evaluations to ensure compliance with the standard and continuous improvement.
-
-#### Key modules
-
-- **Pura Vida Data Lake**: Implement access controls, encryption, and continuous monitoring to protect stored data.
-- **Backoffice**: Tools for incident management, audits, and review of security policies.
-- **API Backend**: Ensure that all programming interfaces comply with the security standards established by the norm.
-
-### Data Governance According to the OECD
-
-#### What is it?
-
-The **Organisation for Economic Co-operation and Development (OECD)** promotes principles and best practices in data governance, focusing on the responsible and ethical management of data throughout its lifecycle. This includes aspects such as data quality, transparency, privacy, and interoperability.
-
-#### Application in the project
-
-- **Interoperability**: Facilitate efficient and secure data exchange between different entities and systems.
-- **Transparency**: Provide clear information on how data is collected, processed, and used.
-- **Data quality**: Implement mechanisms to ensure that data is accurate, complete, and up to date.
-
-#### Key modules
-
-- **Happy sharing data**: Tools for the standardization and validation of data shared by users.
-- **Discovering Costa Rica**: Interfaces that allow users to explore and understand the available data, promoting transparency.
-- **Pura Vida Data Lake**: Systems that ensure the integrity and quality of stored data, facilitating its use and reuse.
-
-### Artificial Intelligence Regulation Bill in Costa Rica
-
-#### What is it?
-
-The **Artificial Intelligence Regulation Bill in Costa Rica**, identified as File No. 23.771, seeks to establish a legal framework for the ethical, safe, and sustainable development, implementation, and use of artificial intelligence (AI) in the country. This initiative focuses on the protection and promotion of human dignity, human rights, and people’s well-being, in accordance with the 1949 Political Constitution and international treaties to which Costa Rica is a party.
-
-#### Application in the project
-
-- **Ethical AI development**: Ensure that AI systems used on the platform adhere to ethical principles, avoiding bias and discrimination.
-- **Transparency and explainability**: Implement mechanisms that allow users to understand how and why the AI makes certain decisions.
-- **Protection of personal data**: Ensure that data processing by AI systems complies with privacy and security regulations.
-- **Oversight and accountability**: Establish processes for human oversight of automated decisions and define clear responsibilities in case of errors or malfunctions.
-
-#### Key modules
-
-- **Green Bio Registration**: Incorporate ethical validations in the registration and identity verification processes using AI.
-- **Happy sharing data**: Ensure that AI-generated recommendations and analyses are transparent and understandable to users.
-- **Discovering Costa Rica**: Implement AI algorithms that respect privacy and provide clear explanations for presented results.
-- **Backoffice**: Develop tools for auditing and monitoring AI systems, allowing for the detection and correction of potential biases or errors.
+These policies ensure that **Data Pura Vida** is legally compliant, secure, and auditable at every level — from data registration and AI processing to dashboard visualization and dataset purchases. Each rule is enforceable and traceable by design, ensuring not only political and legal alignment, but also real-world system integrity and developer clarity.
   
 ---
 
