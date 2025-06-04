@@ -1573,6 +1573,127 @@ El Catálogo de Datasets es el componente central donde los usuarios (tanto prov
  
 
   
+### Módulo de Compra de Datasets (Adquisición en "Feliz compartiendo datos")
+
+#### Visión General y Patrones Arquitectónicos Clave
+
+Este módulo gestiona el proceso completo de adquisición de acceso a datasets pagados. Se inicia típicamente desde el "Catálogo de Datasets", donde un usuario selecciona un dataset de interés. El módulo maneja la presentación de los términos de compra, la selección y procesamiento de métodos de pago (integrándose con pasarelas como Stripe y sistemas nacionales como SINPE), la asignación automática de permisos una vez confirmado el pago, y las notificaciones de la transacción.
+
+##### Tecnologías
+- **Frontend:** React + Tailwind CSS.
+- **Backend/Orquestación:** AWS API Gateway + AWS Lambda, Stripe Connect, API SINPE (o integración bancaria), AWS KMS, AWS IAM Identity Center, Amazon DynamoDB, Amazon SES, AWS Step Functions (para flujos de aprobación/provisión complejos), AWS CloudTrail, Amazon OpenSearch.
+
+##### Patrones Arquitectónicos Sugeridos
+
+- **API-Driven y Serverless:** El frontend interactuará con un backend serverless para procesar los pagos y gestionar las suscripciones/accesos.
+- **Component-Based (Frontend):** Componentes de React para el checkout, selección de método de pago, resumen de compra, etc.
+- **Event-Driven Architecture (EDA):** Eventos como "pago confirmado" pueden desencadenar la asignación de permisos y el envío de notificaciones de forma desacoplada.
+- **Secure Payment Processing:** Seguir las mejores prácticas para el manejo de información de pago, minimizando la exposición de datos sensibles y delegando el procesamiento a pasarelas de pago certificadas (Stripe).
+    
+---
+
+#### Clases/Módulos Principales y sus Responsabilidades
+
+##### Frontend (React + Tailwind CSS)
+
+**`CheckoutView` (Contenedor Principal/Página)**  
+- **Responsabilidad:**  Orquestar la interfaz de usuario del proceso de compra para un dataset seleccionado. Mostrar resumen del dataset, precio, términos y condiciones.
+- **Interacciones:**  Utiliza SelectorMetodoPago, ResumenCompra. Se comunica con CompraServiceAPIClient.
+  
+**`SelectorMetodoPago` (Componente React)**  
+- **Responsabilidad:**  Permitir al usuario seleccionar su método de pago preferido (tarjeta de crédito/débito, SINPE, etc.). Integrarse con los elementos de UI de las pasarelas de pago (e.g., Stripe Elements) para la captura segura de la información.
+  
+**`ResumenCompra` (Componente React)**  
+- **Responsabilidad:**  Mostrar un resumen detallado de la compra antes de la confirmación final, incluyendo el dataset, precio, impuestos (si aplican), y términos de acceso.
+  
+**`ConfirmacionCompraView` (Componente React)**  
+- **Responsabilidad:**   Mostrar el estado de la transacción (exitosa o fallida) y los detalles relevantes.
+
+**`CompraServiceAPIClient` (Módulo/Clase en Frontend)**  
+- **Responsabilidad:**  Encapsular la comunicación con el API backend para iniciar el proceso de pago, verificar el estado de la transacción, etc.
+
+##### Backend (AWS Lambda, API Gateway, DynamoDB, Stripe, SINPE, KMS, IAM, SES, Step Functions)
+
+**`CatalogoServiceAPIClient` (Módulo/Clase en Frontend)**  
+- **Responsabilidad:**  Encapsular la comunicación con el API backend para buscar datasets, obtener detalles, etc.
+
+##### Backend (AWS Lambda, AppSync/API Gateway, Glue Data Catalog, Athena, DynamoDB, Lake Formation)
+
+**`ProcesadorPagoAPI` (Función Lambda / Controlador API)**  
+- **Responsabilidad:**  Punto de entrada para las solicitudes de inicio de compra. Recibe el ID del dataset y la información del usuario. Interactúa con ServicioPasarelaPago para procesar el pago.
+- **Tecnologias:**   Lambda, API Gateway.
+
+**`ServicioPasarelaPago` (Módulo/Clase en Backend Lambda)**  
+- **Responsabilidad:**  Interactuar con las pasarelas de pago externas.
+    - ClienteStripe: Lógica específica para crear intentos de pago, confirmar pagos, y manejar webhooks de Stripe para tarjetas de crédito/débito.
+    - ClienteSINPE: Lógica para interactuar con la API de SINPE o sistemas bancarios para transferencias.
+    - ClientePayPal (si se implementa): Lógica para interactuar con la API REST de PayPal.
+- **Seguridad:**  Asegurar que la información sensible de pago se maneje directamente por las pasarelas y no se almacene innecesariamente en el sistema. Utilizar AWS KMS para encriptar cualquier token o referencia sensible que deba almacenarse temporalmente.
+
+**`ValidadorPagoWebhook` (Función Lambda)**  
+- **Responsabilidad:**  Recibir y validar las notificaciones (webhooks) de las pasarelas de pago (e.g., Stripe) para confirmar el estado de las transacciones de forma asíncrona.
+
+**`GestorPermisosDataset` (Función Lambda)**  
+- **Responsabilidad:** Una vez que un pago es confirmado (ValidadorPagoWebhook o respuesta síncrona de ServicioPasarelaPago), este servicio asigna automáticamente los permisos correspondientes al usuario para acceder al dataset comprado. Esto implica interactuar con el sistema de control de acceso (e.g., AWS IAM Identity Center, AWS Lake Formation, o un sistema de permisos personalizado).
+- **Tecnologias:**  Lambda, AWS IAM Identity Center, AWS Lake Formation.
+
+**`RegistroTransaccionCompra` (Módulo/Clase de acceso a datos - Lambda + DynamoDB)**  
+- **Responsabilidad:** Registrar cada transacción de compra (exitosa o fallida), incluyendo el usuario, dataset, monto, método de pago, y estado, en una tabla de DynamoDB para auditoría y consulta del usuario/Backoffice.
+
+**`ServicioNotificacionCompra` (Función Lambda)**  
+- **Responsabilidad:** Enviar una notificación por correo electrónico (vía Amazon SES) al usuario confirmando la compra exitosa, los detalles del acceso, y un recibo/factura simplificada.
+
+**`FlujoAprobacionProvisionDatasetPrivado` (AWS Step Functions - Opcional/Específico)**  
+- **Responsabilidad:** Si ciertos datasets privados requieren un paso de "aprobación" o provisión adicional después del pago (como indica el PDF "Requiere aprobación: DynamoDB + Step Functions" para datasets privados ), este flujo de Step Functions orquestaría esos pasos asíncronos antes de activar completamente el acceso. Esto podría ser para datasets que necesitan una configuración especial o una verificación humana final para casos muy específicos, reconciliando con el requisito general de asignación automática.
+
+---
+
+#### Patrones de Diseño Relevantes (Considerando el repositorio y tecnologías)
+
+##### Patrones Creacionales
+- **Factory Method:** ServicioPasarelaPago podría usar un Factory Method para crear el cliente específico de la pasarela de pago (ClienteStripe, ClienteSINPE) según la selección del usuario.
+  
+##### Patrones Estructurales
+- **Facade:**  ProcesadorPagoAPI actúa como una fachada para el proceso de compra, coordinando la interacción con el ServicioPasarelaPago, GestorPermisosDataset, y RegistroTransaccionCompra.
+ 
+- **Adapter:** Necesario para cada ClientePasarelaPago (ClienteStripe, ClienteSINPE) para adaptar la interfaz de la pasarela externa a una interfaz común que ServicioPasarelaPago pueda usar, o simplemente encapsular la lógica de cada SDK/API.
+
+##### Patrones de Comportamiento
+- **Strategy:**   Diferentes métodos de pago (tarjeta, SINPE) pueden ser implementados como diferentes estrategias dentro del ServicioPasarelaPago.
+- **State:** Una transacción de compra pasará por estados como Iniciada, PendientePago, PagoConfirmado, PagoFallido, PermisosAsignados. Este estado se gestionaría en RegistroTransaccionCompra (DynamoDB) y podría ser manejado por Step Functions si el flujo es complejo.
+- **Observer:**
+    - ValidadorPagoWebhook actúa como un observador de los eventos de la pasarela de pago.
+    - Una vez que el GestorPermisosDataset asigna los permisos, podría notificar al ServicioNotificacionCompra y al usuario.
+- **Command:**  Las acciones del usuario como "Confirmar Compra" podrían encapsularse como comandos.
+- **Saga (si se usa Step Functions para FlujoAprobacionProvisionDatasetPrivado):**  Si la asignación de permisos y la provisión de acceso a un dataset privado es un proceso de múltiples pasos que debe ser transaccional (o compensable), el patrón Saga implementado con Step Functions sería apropiado.
+
+---
+
+#### Dependencias Clave
+
+##### Internas (dentro del Módulo de Compras):
+- Los componentes UI dependen del CompraServiceAPIClient.
+- ProcesadorPagoAPI depende de ServicioPasarelaPago, GestorPermisosDataset, RegistroTransaccionCompra, y ServicioNotificacionCompra.
+- ValidadorPagoWebhook interactúa con GestorPermisosDataset, RegistroTransaccionCompra, y ServicioNotificacionCompra.
+
+##### Externas (hacia otros Componentes de Data Pura Vida)
+- **Catálogo de Datasets:**  El flujo de compra se inicia desde el catálogo, que provee la información del dataset (precio, términos).
+- **Componente Central de Seguridad:**
+    - Para la autenticación del usuario que realiza la compra.
+    - Para la asignación y el cumplimiento de los permisos de acceso a datos (a través de IAM Identity Center/Lake Formation, gestionados por GestorPermisosDataset).
+    - Para el uso de AWS KMS para encriptar cualquier información sensible relacionada con la transacción.
+- **Núcleo del Data Lake y Procesamiento Backend (específicamente Gobernanza de Datos):** El GestorPermisosDataset interactuará con los mecanismos de control de acceso del Data Lake (e.g., AWS Lake Formation) para activar el acceso del usuario al dataset comprado.
+- **Dashboard y Exploración de Datos:**  El acceso adquirido debe reflejarse en lo que el usuario puede ver y utilizar en sus dashboards.
+- **Servicio de Notificaciones Transversal:**  Utilizado por ServicioNotificacionCompra (a través de Amazon SES).
+- **Portal de Backoffice:**  Para auditoría de transacciones, gestión de posibles disputas, y visualización de registros de compra.
+    
+##### Servicios Externos (AWS y Terceros)
+- **Pasarelas de Pago:**  Stripe Connect, API SINPE (o integración bancaria específica), potencialmente PayPal.
+- **AWS Services:**  AWS API Gateway, AWS Lambda, Amazon DynamoDB (para registro de transacciones y estados), AWS KMS (para encriptación), AWS IAM Identity Center (para permisos), Amazon SES (para notificaciones), AWS CloudTrail y Amazon OpenSearch (para auditoría), AWS Step Functions (opcional, para flujos complejos).
+
+ 
+
+  
 
 
 
