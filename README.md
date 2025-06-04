@@ -1348,3 +1348,120 @@ Este módulo permite a los usuarios registrados (personas físicas o jurídicas)
 
 
 
+### Núcleo del Data Lake y Procesamiento de Datos Backend
+
+#### Visión General y Patrones Arquitectónicos Clave
+
+Este componente es responsable de la ingesta, almacenamiento seguro y versionado, transformación inteligente (ETDL), y gobernanza de todos los datasets dentro del ecosistema Data Pura Vida. Implementa los pipelines de datos, asegura la calidad de los datos, y los prepara para ser consumidos de forma segura por el Módulo de Dashboard, servicios de IA, u otros sistemas autorizados. No tiene una interfaz de usuario directa, sino que opera como un conjunto de servicios y procesos backend.
+
+##### Tecnologías
+- **Backend Clave:** Amazon S3, Apache Iceberg, AWS Glue (Crawlers, Data Catalog, Jobs, Deequ, DataBrew), AWS Lambda, Amazon SageMaker (o Amazon Entity Resolution para duplicados), Amazon Athena, AWS Lake Formation, Amazon EventBridge, Amazon SNS, AWS Step Functions, AWS KMS, DynamoDB (para versionamiento de metadatos o flujos específicos).
+
+##### Patrones Arquitectónicos Sugeridos
+
+- **Data Lake Architecture:** Utilización de Amazon S3 como almacenamiento central, con formatos de tabla abiertos como Apache Iceberg para gestionar el versionamiento, esquema y transacciones ACID sobre el data lake.
+- **Pipeline de Datos (Data Pipeline):** Definición de flujos de datos secuenciales o paralelos para la ingesta, validación, limpieza, transformación y carga, utilizando servicios como AWS Glue y AWS Step Functions para la orquestación.
+- **Event-Driven Architecture (EDA):** Muchos procesos del Data Lake (ej. inicio de transformaciones tras la llegada de nuevos datos, procesamiento de deltas) se activarán por eventos (S3 events, EventBridge rules, SNS notifications).
+- **Infrastructure as Code (IaC):** La definición de la infraestructura del Data Lake (buckets S3, tablas Glue, jobs, roles IAM, políticas de Lake Formation) debería gestionarse como código (e.g., AWS CloudFormation, CDK, Terraform) para la automatización y consistencia.
+
+---
+
+#### Clases/Módulos Principales y sus Responsabilidades
+
+Dada la naturaleza de este componente, las "clases" o "módulos" representan principalmente configuraciones de servicios de AWS, scripts de procesamiento de datos (ej. en PySpark para Glue), funciones Lambda, y definiciones de flujos de trabajo.
+
+**`ModuloIngestaDatos` (AWS Glue, S3, Lambda, AppFlow, DataSync, API Gateway)**  
+- **Responsabilidad:**  Gestionar la entrada de datos desde diversas fuentes.
+    - ConectorArchivos: Para CSV, JSON, Excel subidos a S3 (puede usar AppFlow o DataSync para sincronización o Lambdas para procesamiento inicial).
+    - ConectorBasesDatos: Utiliza AWS Glue para conectarse a fuentes SQL y NoSQL y extraer datos.
+    - ConectorAPIsExternas: Lambdas que consumen APIs externas y depositan los datos en S3.
+    - ValidadorFormatoEIntegridadInicial: Utiliza AWS Glue Jobs y Amazon Deequ para realizar validaciones de calidad de datos tempranas sobre los datos ingeridos.
+    - RegistradorMetadatosTecnicos: AWS Glue Crawlers y Glue Data Catalog para descubrir esquemas y registrar metadatos técnicos de las fuentes. También puede usar Glue DataBrew para analizar datos y generar metadatos.
+
+**`ModuloAlmacenamientoVersionado` (Amazon S3, Apache Iceberg)**  
+- **Responsabilidad:**  Almacenar los datos de forma segura, eficiente y versionada.
+    - GestorCapasS3: Organiza los datos en S3 en capas (ej. raw, processed, curated).
+    - MotorTablaIceberg: Implementa Apache Iceberg sobre S3 para proporcionar historial de versiones, evolución de esquemas, y gestión eficiente de deltas a nivel de almacenamiento.
+
+**`ModuloProcesamientoETDL` (AWS Glue, Amazon SageMaker, AWS Lambda, AWS Step Functions)**  
+- **Responsabilidad:**   Orquestar y ejecutar la transformación, limpieza, detección de contexto, modelado y carga final de los datos. Este es el "motor de IA que aplique un flujo ETDL" mencionado en los requisitos.
+    - OrquestadorETDL (Step Functions o Glue Workflows): Define y gestiona el flujo completo de ETDL para cada dataset.
+    - ExtractorDatosCrudos (Glue Jobs): Extrae datos de la capa raw o de las cargas incrementales/deltas.
+    - ModuloLimpiezaTransformacionDatos (Glue Jobs con PySpark, SageMaker):
+        - Normalización de datos y rediseño de esquemas (puede usar SageMaker para lógica compleja o reglas en Glue).
+        - Detección y manejo de duplicados (SageMaker o Amazon Entity Resolution).
+        - Corrección de errores, imputación de valores faltantes, etiquetado (SageMaker).
+        - Aplicación de reglas de negocio y enriquecimiento de datos.
+    - ModuloModeladoCargaFinal (Glue Jobs, Athena CTAS): Modela los datos en el formato final optimizado para consulta y los carga en la capa "curated" o "modeled".
+
+**`ModuloGestionCargasDelta` (AWS Glue, Amazon Deequ, EventBridge, Lambda, SNS, API Gateway)**  
+- **Responsabilidad:**   Manejar las cargas incrementales o deltas.
+    - IdentificadorDeltas: Utiliza AWS Glue y Deequ para identificar los cambios (campos diferenciales) entre cargas.
+    - ManejadorTimedPull: Amazon EventBridge + Lambda para programar la revisión y carga periódica de deltas.
+    - ManejadorCallbacks: Amazon SNS + API Gateway para activar la carga de deltas mediante notificaciones de la fuente de datos.
+
+
+**`ModuloGobernanzaDatos` (AWS Lake Formation, AWS Glue Data Catalog, Amazon Macie)**  
+- **Responsabilidad:**  Aplicar políticas de acceso, catalogación y protección de datos sensibles.
+    - GestorPermisosLakeFormation: Define y aplica permisos granulares (a nivel de tabla, columna, fila - RLS) sobre los datos catalogados.
+    - DescubridorDatosSensibles: Utiliza Amazon Macie para identificar y clasificar datos sensibles dentro del Data Lake.
+
+**`ServicioMonitorizacionDataLake` (Amazon CloudWatch, AWS X-Ray, AWS CloudTrail, Athena)**  
+- **Responsabilidad:**  Monitorear la salud, rendimiento y uso del Data Lake.
+    - Estado de los servicios y pipelines (CloudWatch).
+    - Detección de cuellos de botella (X-Ray).
+    - Métricas de uso y acceso a datos (CloudTrail + Athena).
+
+---
+
+#### Patrones de Diseño Relevantes (Considerando el repositorio y tecnologías)
+
+##### Patrones Creacionales
+- **Factory Method:** Podría usarse en el ModuloIngestaDatos para crear diferentes tipos de "conectores" (ConectorArchivos, ConectorBasesDatos, ConectorAPIsExternas) según la fuente de datos.
+
+##### Patrones Estructurales
+- **Facade:** El OrquestadorETDL (Step Functions) actúa como una fachada para la compleja secuencia de pasos de transformación y limpieza.
+
+- **Adapter:** Se utilizaría dentro de los conectores del ModuloIngestaDatos si las fuentes de datos externas tienen APIs o formatos que necesitan ser adaptados al estándar interno de ingesta.
+
+- **Composite:** Si se definen flujos de ETDL jerárquicos (un flujo principal compuesto de sub-flujos más pequeños), el patrón Composite podría modelar esta estructura.
+
+##### Patrones de Comportamiento
+- **Chain of Responsibility:** Dentro del ModuloLimpiezaTransformacionDatos, diferentes pasos de limpieza o validación de calidad podrían encadenarse. Cada paso maneja una tarea específica y pasa los datos al siguiente.
+- **Strategy:**
+    - Diferentes estrategias de ingesta o transformación podrían aplicarse según el tipo de dataset o su criticidad.
+    - Estrategias para la detección de duplicados (ej. diferentes algoritmos en SageMaker) podrían ser intercambiables.
+- **Template Method:** Un job de AWS Glue podría definir un esqueleto para un proceso ETDL (extracción, transformación básica, carga), permitiendo que "pasos" específicos (como las reglas de transformación exactas) sean personalizados para diferentes datasets.
+- **State:**  El estado de un dataset a medida que se mueve por el pipeline ETDL (Ingestado, Validado, Transformando, Limpiando, Cargado, Fallido) es crucial y sería gestionado por el OrquestadorETDL (Step Functions inherentemente maneja estados).
+- **Observer:**  El ModuloMonitorizacionDataLake actúa como un observador de los diferentes procesos del Data Lake, registrando métricas y generando alertas (CloudWatch Alarms). Eventos de S3 pueden notificar al OrquestadorETDL para iniciar procesamientos.
+
+---
+
+#### Dependencias Clave
+
+##### Internas (dentro del Núcleo del Data Lake):
+- ModuloIngestaDatos alimenta al ModuloAlmacenamientoVersionado.
+- ModuloAlmacenamientoVersionado provee datos al ModuloProcesamientoETDL.
+- ModuloProcesamientoETDL es orquestado y sus componentes interactúan secuencialmente o en paralelo.
+- ModuloGobernanzaDatos (Lake Formation) actúa sobre los datos catalogados y almacenados.
+- Todos los módulos son monitoreados por ServicioMonitorizacionDataLake.
+
+##### Externas (hacia otros Componentes de Data Pura Vida)
+- **Módulo de Gestión de Datasets por el Usuario**  Recibe los datos crudos y la configuración inicial de este módulo para iniciar el proceso de ingesta.
+- **Componente Central de Seguridad:**
+    - Para la gestión de claves (KMS) usadas en el cifrado en reposo y en tránsito dentro del Data Lake.
+    - Para la aplicación de roles y políticas de IAM que rigen el acceso a los servicios del Data Lake (S3, Glue, SageMaker, Lake Formation).
+- **Dashboard y Exploración de Datos:** Consume los datos procesados y gobernados desde el Data Lake (a través de Athena y QuickSight, con permisos de Lake Formation).
+- **Módulos de IA (si hay modelos que se entrenan/ejecutan sobre datos del Lake):**  Acceden a datos preparados del Data Lake.
+- **Portal de Backoffice:**  Para visualizar métricas de monitoreo, estado de los pipelines, y posiblemente gestionar algunas configuraciones de gobernanza o calidad de datos.
+    
+##### Servicios Externos (AWS)
+- Prácticamente toda la suite de servicios de datos y analítica de AWS mencionada en la sección de tecnologías (S3, Iceberg, Glue, Lambda, SageMaker, Athena, Lake Formation, EventBridge, SNS, Step Functions, KMS, CloudWatch, X-Ray, CloudTrail, Macie, etc.).
+  
+
+
+
+
+
+
+
