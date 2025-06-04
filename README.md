@@ -882,3 +882,469 @@ Imagine our AI system is a prestigious artisanal workshop. Its specialty is taki
 [Collaborative pattern](https://drive.google.com/file/d/19RyEgnIBL0t_Xn1qkGxolLqWiGIJQ1Sx/view?usp=sharing)
 
 ![Imagen del Collaborative Pattern #3](./CollaborativePattern.png)
+
+## Arquitectura de clases, patrones y dependencias (a corregir para ser orientado a capas)
+
+### Módulo de Registro de Entidades (Portal "bio registro verde")
+
+#### Visión General y Patrones Arquitectónicos Clave
+
+Este módulo es el punto de entrada al ecosistema **Data Pura Vida**. Se encarga de registrar a personas físicas y jurídicas, solicitando datos diferenciados y adaptando dinámicamente los formularios. Debe validar la identidad de forma segura, incluyendo la verificación de documentos con IA y mecanismos de autenticación avanzada.
+
+##### Tecnologías
+
+- **Frontend:** React + Tailwind CSS  
+- **Backend/Orquestación:** AWS Amplify, AWS AppSync (GraphQL) o API Gateway (REST) + AWS Lambda  
+- **Notificaciones:** Amazon SES  
+
+##### Patrones Arquitectónicos Sugeridos
+
+- **API-Driven y Serverless:** El frontend (React) interactuará con un backend serverless (Lambda) a través de APIs (AppSync/API Gateway). Esto facilita la escalabilidad y reduce la carga de gestión de infraestructura. 
+- **Component-Based (Frontend):** React, por naturaleza, promueve una arquitectura basada en componentes reutilizables para la interfaz de usuario (formularios, campos de entrada, indicadores de progreso, etc.).  
+- **Event-Driven (para flujos asíncronos):** Procesos como la validación de documentos (que puede tomar tiempo) o el envío de notificaciones post-registro se beneficiarán de un desacoplamiento mediante eventos (e.g., una Lambda que publica un evento a EventBridge o SNS una vez que el usuario sube documentos, y otra Lambda que reacciona a ese evento para iniciar la validación).
+
+---
+
+#### Clases/Módulos Principales y sus Responsabilidades
+
+Aquí delineamos las "clases" o agrupaciones lógicas de funcionalidad, que en un contexto de React y Lambda podrían ser componentes de React, funciones Lambda con su lógica interna encapsulada, o clases de servicio en el backend.
+
+##### Frontend (React + Tailwind CSS + AWS Amplify)
+
+**`RegistroView` (Contenedor Principal/Página)**  
+- **Responsabilidad:**  Orquestar las diferentes etapas del proceso de registro en la UI (selección de tipo de entidad, llenado de formularios, subida de documentos, confirmación). Gestionar el estado general del flujo de registro en el cliente.
+- **Interacciones:** Usa componentes como `FormularioDinamico`, `UploaderDocumentos`. Se comunica con `RegistroServiceAPIClient`.
+
+**`FormularioDinamico` (Componente React)**  
+- **Responsabilidad:** Renderizar los campos del formulario de manera dinámica según el tipo de entidad seleccionada (persona física, jurídica, institución, etc.) y los metadatos del formulario recibidos del backend. Implementar validaciones de entrada en el cliente (e.g., usando una librería como Yup).
+- **Tecnologías:** React.js  
+- **Atributos Clave:** `schemaFormulario`, `datosActuales`.  
+- **Métodos Clave:** `renderizarCampo()`, `validarFormulario()`, `manejarCambioInput()`.
+
+**`UploaderDocumentos` (Componente React)**  
+- **Responsabilidad:** Permitir al usuario seleccionar y subir los documentos requeridos (cédulas, actas, registros tributarios, etc.). Mostrar el progreso de la subida y manejar errores. Podría interactuar directamente con S3 (usando Amplify Storage) para subidas seguras.  
+
+**`RegistroServiceAPIClient` (Módulo/Clase en Frontend)**  
+- **Responsabilidad:**  Encapsular la comunicación con el backend API (AppSync/API Gateway). Realizar las llamadas para obtener la estructura de los formularios, enviar los datos del registro, iniciar la subida de documentos, etc.
+- **Métodos Clave:**
+  - `obtenerSchemaFormulario(tipoEntidad)`
+  - `enviarDatosRegistro(datos)`
+  - `solicitarUrlSubidaDocumento(nombreArchivo)`
+
+##### Backend (AWS Lambda, AppSync/API Gateway, DynamoDB)
+
+**`RegistroRequestHandler` (Función Lambda / Controlador API)**  
+- **Responsabilidad:** Punto de entrada principal para las solicitudes de registro. Orquesta el flujo de registro en el backend: valida la solicitud, interactúa con el GestorFormulariosService para la lógica de formularios, invoca al ServicioValidacionIdentidad, y al ServicioPersistenciaRegistro.
+- **Tecnologías:** AWS Lambda.
+
+**`GestorFormulariosService` (Módulo/Clase en Backend Lambda)**  
+- **Responsabilidad:** Proveer la estructura y las reglas de los formularios dinámicos según el tipo de entidad. Esta información podría estar almacenada en DynamoDB o como JSON Schemas. Adapta los campos requeridos dinámicamente.
+- **Tecnologías:** AWS Lambda.
+- **Método Clave:** `obtenerDefinicionFormulario(tipoEntidad)`
+
+**`ServicioValidacionDatosEntrada` (Módulo/Clase en Backend Lambda)**  
+- **Responsabilidad:**  Realizar validaciones de negocio más complejas en los datos enviados que no se pueden hacer solo en el frontend (e.g., cruces con listas internas, validaciones tributarias preliminares si aplica).
+- **Tecnologías:** AWS Lambda.
+
+**`ServicioPersistenciaRegistro` (Módulo/Clase en Backend Lambda)**  
+- **Responsabilidad:** Guardar la información del registro (parcial o completo) en una base de datos (e.g., DynamoDB), marcando los registros como pendientes hasta su aprobación.
+- **Tecnologías:** AWS Lambda, DynamoDB.
+
+**`OrquestadorFlujoRegistro` (AWS Step Functions) - *Opcional***  
+- **Responsabilidad:** Si el proceso de registro implica múltiples pasos asíncronos (registro inicial, espera de subida de documentos, validación de documentos, notificación, aprobación manual), Step Functions puede orquestar estas Lambdas y servicios.
+**Tecnologías:** AWS Step Functions.
+
+(Nota: El ServicioValidacionDocumentoIA y el ModuloAutenticacionUsuario se detallarán más en sus respectivos componentes de "Validación de Documentos con IA" y "Seguridad", pero el RegistroRequestHandler interactuará con ellos.)
+---
+
+#### Patrones de Diseño Relevantes
+
+##### Patrones Creacionales
+- **Builder:** Podría ser útil en `GestorFormulariosService` para construir objetos de formulario complejos y dinámicos paso a paso, según el tipo de entidad y los datos requeridos. Esto permitiría que el mismo proceso de construcción cree diferentes representaciones de formularios.
+- **Factory Method / Abstract Factory:** Si existen diferentes tipos de "Registros" (ej. `RegistroPersonaFisica`, `RegistroPersonaJuridica`) que comparten una interfaz común pero tienen lógicas de creación o validación específicas, una Factory podría gestionarlos.
+
+
+##### Patrones Estructurales
+- **Facade:**
+  - `RegistroServiceAPIClient` n el frontend actúa como una fachada simplificando la interacción con las complejidades del API backend.
+  - En el backend, `RegistroRequestHandler` podría ser visto como una fachada que coordina múltiples servicios más pequeños (`GestorFormulariosService`, `ServicioValidacionDatosEntrada`, etc.).
+
+- **Adapter:** Si en el futuro se necesita integrar con un sistema de registro externo heredado o un servicio de validación con una API incompatible, el patrón Adapter sería crucial.
+
+##### Patrones de Comportamiento
+- **Chain of Responsibility:** Para el proceso de validación de datos en el backend. Cada validador en la cadena podría manejar un tipo específico de validación (formato, lógica de negocio, completitud) y pasar la solicitud al siguiente.
+- **State:** El proceso de registro de una entidad pasará por varios estados (Borrador, PendienteSubidaDocumentos, PendienteValidacionIA, PendienteRevisionManual, Aprobado, Rechazado). El patrón State podría modelar estos estados y el comportamiento asociado a cada uno de forma elegante, especialmente si se gestiona con Step Functions.
+- **Command:**  Las acciones del usuario en la UI (ej. "Guardar Borrador", "Enviar Registro") podrían encapsularse como objetos Command, facilitando su manejo y potencial encolamiento o logging.
+- **Observer:** Una vez que el registro es validado y aprobado (o cualquier cambio de estado significativo), otros módulos o el propio usuario podrían ser notificados. El ServicioNotificacionesRegistro (usando Amazon SES) actuaría como un notificador para los observadores interesados. Esto se alinea con el uso de SNS/EventBridge para una arquitectura Event-Driven.
+- **Strategy:** Diferentes estrategias de validación o formulario por país o tipo de entidad.Si hay diferentes estrategias de validación de datos de entrada o de conformación de formularios según el país o tipo de entidad (más allá de solo campos diferentes), este patrón podría ser aplicable.
+
+---
+
+#### Dependencias Clave
+
+##### Internas
+- Los componentes UI (RegistroView, FormularioDinamico, UploaderDocumentos) dependen del RegistroServiceAPIClient.
+- El RegistroRequestHandler (Lambda) depende de GestorFormulariosService, ServicioValidacionDatosEntrada, ServicioPersistenciaRegistro y orquesta llamadas a servicios de otros componentes.
+
+##### Externas (Otros Componentes de Data Pura Vida)
+- **Módulo de Validación de Documentos con IA**: El flujo de registro invocará este módulo después de que se suban los documentos.
+- **Componente Central de Seguridad:**  
+  - Para la creación y gestión inicial de la identidad digital del usuario/representante (a través de AWS Cognito).
+  - Para la generación de las llaves criptográficas iniciales (vía AWS KMS).
+  - Para la verificación geográfica (vía AWS WAF).
+- **Portal de Backoffice:**  
+  - Para los flujos de revisión manual de registros marcados como pendientes. 
+- **Servicio de Notificaciones Transversal:**  
+  - Para enviar correos de confirmación, aprobación, etc., usando Amazon SES.
+    
+##### Servicios Externos (AWS)
+- **Frontend:** AWS Amplify (hosting, auth, storage UI)  
+- **APIs Backend:**  AWS AppSync o Amazon API Gateway.  
+- **Lógica de Negocio:** AWS Lambda  
+- **Almacenamiento de Estado/Configuración:** Amazon DynamoDB  
+- **Orquestación de Flujos (opcional):** AWS Step Functions  
+
+> *Nota:* Las dependencias para Validación de Documentos con IA y Seguridad se detallarán en sus respectivos componentes, pero son invocadas desde aquí.
+
+
+### Módulo de Validación de Documentos con IA
+
+#### Visión General y Patrones Arquitectónicos Clave
+
+Este módulo es un componente backend crítico, invocado principalmente durante el "Módulo de Registro de Entidades". Su función es recibir los documentos subidos por los usuarios, procesarlos utilizando un conjunto de servicios de Inteligencia Artificial y lógica de negocio personalizada para verificar su autenticidad, validez, completitud y extraer información relevante. El resultado de esta validación determinará si el proceso de registro puede continuar automáticamente o si requiere una revisión manual.
+
+##### Tecnologías
+
+- **Tecnologías Backend Clave:** Amazon Textract, Amazon Comprehend, Amazon SageMaker, AWS Lambda, AWS Step Functions, DynamoDB.  
+- **Interacción Principal:** API Gateway o invocación directa de Lambda desde otros servicios backend.  
+
+##### Patrones Arquitectónicos Sugeridos
+
+- **Serverless y Microservicios:** Cada etapa de la validación (OCR, clasificación, verificación de reglas, etc.) podría ser implementada como una función Lambda independiente o un microservicio pequeño, lo que facilita el mantenimiento y la escalabilidad individual de cada paso.
+- **Event-Driven Architecture (EDA):** Para procesos de validación que pueden ser largos o involucrar múltiples pasos, una arquitectura basada en eventos (usando SNS, SQS, EventBridge y Step Functions) es ideal. Por ejemplo, la subida de un documento puede disparar un evento que inicie el flujo de validación.
+- **Pipes and Filters:** El flujo de validación de un documento puede verse como una tubería donde el documento pasa por varios filtros (etapas de procesamiento).
+
+---
+
+#### Clases/Módulos Principales y sus Responsabilidades
+
+Dado que es un módulo backend con uso intensivo de Lambdas y servicios de IA, las "clases" pueden representar la lógica dentro de las Lambdas, clientes para los servicios de AWS, o entidades de datos.
+
+**`OrquestadorValidacionDocumento` (AWS Step Functions o AWS Lambda)**
+- **Responsabilidad:** Gestionar el flujo completo de validación de un documento. Invoca secuencialmente o en paralelo los diferentes servicios de análisis y validación. Maneja los estados del proceso (e.g., EN_PROCESO, VALIDADO_CON_ERRORES, PENDIENTE_REVISION_MANUAL, VALIDADO_OK).
+- **Tecnologías:** AWS Step Functions para orquestar múltiples Lambdas y servicios, o una Lambda principal si el flujo es más simple.
+- **Métodos Clave (conceptuales):** iniciarFlujoValidacion(idDocumento, tipoDocumentoEsperado), manejarResultadoPasoValidacion().
+  
+**`ServicioExtraccionDatos` (AWS Lambda)**
+- **Responsabilidad:** Utilizar Amazon Textract para realizar OCR sobre el documento, extraer texto crudo, datos de formularios y tablas. Puede identificar el tipo de documento basado en su estructura inicial.
+- **Tecnologías:** Tecnologías: AWS Lambda, Amazon Textract.
+- **Métodos Clave:** extraerTexto(documento), extraerFormularios(documento).
+  
+**`ServicioClasificacionDocumento` (AWS Lambda)**
+- **Responsabilidad:** Utilizar Amazon Comprehend y/o un modelo en Amazon SageMaker para clasificar el tipo de documento (cédula, acta constitutiva, registro tributario, etc.) basado en su contenido y/o metadatos extraídos.
+- **Tecnologías:** AWS Lambda, Amazon Comprehend, Amazon SageMaker.
+- **Métodos Clave:** clasificar(textoDocumento, metadatos).
+
+**`ServicioVerificacionContenido` (AWS Lambda)**
+- **Responsabilidad:** Aplicar reglas de negocio y modelos de SageMaker para verificar la información extraída. Esto incluye:
+    - Verificación de campos obligatorios.
+    - Verificación de legibilidad, formato y estructura (contra patrones esperados).
+    - Comparación contra plantillas o reglas predefinidas (podría usar DynamoDB para almacenar estas reglas/plantillas).
+    - Señalamiento de inconsistencias o posibles fraudes (usando modelos de detección en SageMaker).
+    - Validaciones inteligentes según tipo de usuario o entidad.
+        - **Tecnologías:** AWS Lambda, Amazon SageMaker, DynamoDB.
+        - **Métodos Clave:** validarCamposObligatorios(datosExtraidos, tipoDocumento), verificarFormato(datosExtraidos, tipoDocumento), detectarInconsistencias(datosExtraidos).
+  
+**`ServicioValidacionFirmasDigitales ` (AWS Lambda)**
+- **Responsabilidad:** Si los documentos pueden contener firmas digitales, este servicio se encarga de su verificación utilizando AWS KMS y/o AWS Signer.
+- **Tecnologías:** AWS Lambda, AWS KMS, AWS Signer.
+- **Métodos Clave:** verificarFirma(documento, certificadoPublico).
+  
+**`ServicioConsultaFuentesExternas ` (AWS Lambda)**
+- **Responsabilidad:** Interactuar con APIs externas (a través de API Gateway si es necesario) para validar información específica del documento contra registros oficiales (ej. validez de un número de identificación fiscal, registro de una empresa).
+- **Tecnologías:** AWS Lambda, Amazon API Gateway.
+- **Métodos Clave:** consultarValidezExterna(tipoConsulta, datosConsulta).
+  
+**`RegistroEstadoValidacion` (Módulo/Clase de acceso a datos - Lambda + DynamoDB)**
+- **Responsabilidad:** Almacenar y actualizar el estado de cada paso del proceso de validación para cada documento en DynamoDB. Esta tabla sería consultada por el OrquestadorValidacionDocumento y potencialmente por el Backoffice.
+- **Tecnologías:** AWS Lambda, Amazon DynamoDB.
+
+---
+
+#### Patrones de Diseño Relevantes (Considerando el repositorio y tecnologías)
+
+##### Patrones Creacionales
+- **Factory Method:** Si diferentes tipos de documentos (CedulaValidator, ActaConstitutivaValidator, etc.) requieren flujos de validación o conjuntos de reglas ligeramente diferentes dentro del ServicioVerificacionContenido, un Factory Method podría instanciar el validador específico.
+
+##### Patrones Estructurales:
+- **Facade:** El OrquestadorValidacionDocumento (si es una Lambda compleja) o un API Gateway que exponga este módulo pueden actuar como una fachada, simplificando la interacción desde el "Módulo de Registro de Entidades" hacia la complejidad interna del proceso de validación.
+- **Adapter:** Necesario si el ServicioConsultaFuentesExternas debe interactuar con APIs externas que tienen interfaces no estándar.
+- **Decorator:** Podría usarse para añadir dinámicamente pasos de validación opcionales a un flujo base. Por ejemplo, una validación de firma digital podría ser un "decorador" sobre un proceso de validación de contenido.
+  
+##### Patrones de Comportamiento:
+- **Chain of Responsibility:** El proceso de verificación de contenido dentro de ServicioVerificacionContenido podría implementarse como una cadena. Cada eslabón de la cadena se encarga de una regla o tipo de validación específica (campos obligatorios, formato, consistencia lógica). Si una validación falla, la cadena puede detenerse o acumular errores.
+- **State:** El estado de un documento durante su validación (Recibido, ExtrayendoTexto, Clasificando, VerificandoContenido, ValidadoOK, ErrorValidacion, PendienteRevisionManual) es fundamental. AWS Step Functions implementa este patrón de forma nativa. Si se usa una Lambda orquestadora, se tendría que gestionar el estado explícitamente (posiblemente con la ayuda de RegistroEstadoValidacion en DynamoDB).
+- **Strategy:** Diferentes tipos de documentos o entidades podrían requerir "estrategias" de validación distintas. Por ejemplo, la estrategia para validar una cédula de identidad será diferente a la de un acta constitutiva. El OrquestadorValidacionDocumento podría seleccionar la estrategia adecuada.
+- **Template Method:** Un flujo de validación base podría definirse en una clase o función Lambda "plantilla", y pasos específicos (como las reglas exactas de verificación de contenido para un tipo de documento) podrían ser implementados por subclases o funciones especializadas.
+- **Observer:** Una vez que el proceso de validación de un documento finaliza (con éxito, error, o derivación a revisión manual), se podría notificar al "Módulo de Registro de Entidades" o al OrquestadorFlujoRegistro para que continúe con el siguiente paso.
+
+---
+
+#### Dependencias Clave
+
+##### Internas
+- El OrquestadorValidacionDocumento depende de y coordina todos los demás servicios (ServicioExtraccionDatos, ServicioClasificacionDocumento, ServicioVerificacionContenido, etc.).
+- Varios servicios dependen de RegistroEstadoValidacion para persistir y consultar el progreso.
+
+##### Externas (hacia otros Componentes de Data Pura Vida)
+- **Módulo de Registro de Entidades**: Es el principal invocador de este módulo, enviando los documentos a validar y recibiendo los resultados.
+- **Portal de Backoffice:** Para los casos que requieren revisión manual, este módulo debe informar al Backoffice y permitir a los administradores ver los detalles de la validación y el documento. El PDF menciona "Backoffice Admin Panel + DynamoDB + Step Functions" para la revisión manual.
+- **Servicio de Notificaciones Transversal:**  
+  - Podría ser invocado para notificar fallos críticos en el proceso de validación o para alertar sobre documentos pendientes de revisión.
+    
+##### Servicios Externos (AWS)
+- **Procesamiento de IA:** Amazon Textract, Amazon Comprehend, Amazon SageMaker. 
+- **Lógica de Negocio y Orquestación:**  AWS Lambda, AWS Step Functions.
+- **Almacenamiento de Estado/Reglas:** Amazon DynamoDB.  
+- **Gestión de Documentos (almacenamiento temporal/intermedio):** Amazon S3 (implícito, ya que Textract y otros servicios suelen operar sobre documentos en S3).  
+- **Seguridad para Firmas:** AWS KMS, AWS Signer.  
+- **Interacción API (si expone o consume):** Amazon API Gateway.
+
+
+### Componente Central de Seguridad
+
+#### Visión General y Patrones Arquitectónicos Clave
+
+Este componente transversal es la piedra angular para proteger la integridad, confidencialidad y disponibilidad de toda la plataforma Data Pura Vida. Establece y gestiona los mecanismos de autenticación, autorización, la protección de datos (cifrado, integridad), la gestión segura de claves criptográficas (incluyendo el complejo sistema de custodia tripartita) y la auditoría de seguridad centralizada. Su diseño debe ser robusto y adaptable para cumplir con los altos estándares de seguridad requeridos.
+
+##### Tecnologías
+- **Backend Clave:** AWS Cognito, AWS IAM (Identity Center, Roles, Policies), AWS KMS, AWS Secrets Manager, AWS CloudHSM, AWS WAF, Lambda@Edge, AWS CloudTrail, Amazon Macie, AWS Signer, AWS Encryption SDK. 
+
+##### Patrones Arquitectónicos Sugeridos
+
+- **Zero Trust Architecture (Principios):** Aunque no es un patrón único, se deben aplicar principios de "confianza cero", verificando explícitamente cada acceso, aplicando el menor privilegio y asumiendo que las amenazas pueden originarse tanto interna como externamente.
+- **Defense in Depth:** Múltiples capas de controles de seguridad independientes para proteger los activos.
+- **Centralized Identity and Access Management (IAM):** Uso de servicios como AWS Cognito y AWS IAM Identity Center para una gestión unificada de identidades y políticas de acceso.
+- **Security as Code:** Las políticas de seguridad, configuraciones de firewall y otros controles deberían definirse como código (e.g., usando AWS CloudFormation, CDK, o Terraform) para asegurar consistencia, versionado y auditabilidad.
+
+---
+
+#### Clases/Módulos Principales y sus Responsabilidades
+
+Estos módulos representan agrupaciones lógicas de funcionalidad de seguridad, implementados principalmente mediante la configuración y orquestación de servicios de AWS y lógica en Lambdas.
+
+**`ServicioAutenticacionIdentidad` (Backend - AWS Cognito, Amazon Rekognition, Lambda)**  
+- **Responsabilidad:**  Gestionar el ciclo de vida completo de la autenticación de usuarios y sistemas.
+    - Registro de credenciales y configuración de factores de autenticación.
+    - Implementación de Autenticación Multifactor (MFA) nativa de Cognito (OTP/SMS/Email/Auth App).
+    - Integración con Amazon Rekognition para biometría (detección facial) y detección de prueba de vida.
+    - Federación de identidades (si aplica).
+- **Tecnologías:** AWS Cognito, Amazon Rekognition, AWS Lambda para lógica personalizada.
+
+**`ModuloAutorizacionRBAC` (Backend - AWS IAM Identity Center, IAM Policies, AppSync Auth Resolvers, Lambda)**  
+- **Responsabilidad:**  Definir y hacer cumplir las políticas de control de acceso basado en roles (RBAC) para toda la plataforma.
+    - Gestión centralizada de roles y asignación de permisos granulares a funciones, APIs y recursos de datos.
+    - Soporte para cuentas multi-organización y delegación de administración de usuarios dentro de una organización.
+    - Implementación de políticas de acceso dinámicas basadas en el contexto (ej. IP, geografía, tipo de entidad).
+- **Tecnologías:** AWS IAM Identity Center, IAM Policies, AWS Lambda, AppSync.  
+
+**`GestorClavesCustodia` (Backend - AWS KMS, AWS CloudHSM, AWS Secrets Manager, Lambda)**  
+- **Responsabilidad:**  Administrar de forma segura todo el ciclo de vida de las claves criptográficas y los secretos.
+    - Generación de claves criptográficas simétricas y asimétricas (AWS KMS).
+    - Implementación y coordinación del sistema de custodia tripartita: una parte de la clave en KMS, otra en CloudHSM (o HSM externo), y otra en la organización, con coordinación vía Lambda.
+    - Almacenamiento seguro de secretos y credenciales (AWS Secrets Manager o HashiCorp Vault).
+    - Gestión de la rotación automática y personalizada de claves (AWS KMS Rotation + Lambda).
+- **Tecnologías:** AWS KMS, AWS CloudHSM, AWS Secrets Manager, AWS Lambda.
+
+**`ServicioProteccionPerimetral` (Configuración de Servicios AWS - AWS WAF, Lambda@Edge, CloudFront)**  
+- **Responsabilidad:**   Proteger los puntos de entrada de la aplicación (APIs, portales web) contra amenazas comunes y aplicar políticas de acceso a nivel de red.
+    - Verificación geográfica para restringir el acceso a Costa Rica y gestionar listas blancas de IPs (AWS WAF con reglas Geo + Lambda@Edge).
+    - Protección contra ataques web comunes (XSS, SQLi) usando AWS WAF.
+    - Control de cuotas y límites de acceso por IP, país, frecuencia (AWS WAF + Lambda).
+    - Bloqueo de exportación de datos/gráficos a nivel de red si es aplicable (WAF + Lambda).
+- **Tecnologías:** AWS WAF, Lambda@Edge, Amazon CloudFront.
+
+**`ModuloSeguridadDatos` (Configuración de Servicios AWS y Lambdas - AWS KMS, Amazon Macie, AWS Encryption SDK)**  
+- **Responsabilidad:**  Asegurar la confidencialidad e integridad de los datos en reposo, en tránsito y, opcionalmente, a nivel de aplicación.
+    - Configuración y gestión del cifrado en reposo para todos los almacenamientos de datos (S3, RDS, DynamoDB, Redshift) usando AWS KMS.
+    - Aplicación de TLS 1.2+ para todas las comunicaciones API.
+    - Monitoreo de integridad de datos y detección de datos sensibles (Amazon Macie).
+    - Soporte para cifrado a nivel de aplicación para datos ultra-sensibles (AWS Encryption SDK + Lambda).
+    - Implementación de firmas digitales para no repudio y verificación de artefactos (AWS Signer, AWS KMS).
+- **Tecnologías:** AWS KMS, Amazon Macie, AWS Encryption SDK, AWS Signer.
+
+
+**`ServicioAuditoriaCentralizada` (Configuración de Servicios AWS - AWS CloudTrail, Amazon OpenSearch/Athena, EventBridge)**  
+- **Responsabilidad:**  Recopilar, almacenar y facilitar el análisis de logs de auditoría de toda la plataforma.
+    - Registro de todas las llamadas a APIs de AWS y acciones relevantes (AWS CloudTrail).
+    - Agregación y análisis de logs de auditoría (Amazon OpenSearch o Amazon Athena).
+    - Configuración de alertas para eventos de seguridad sospechosos (CloudWatch Events/EventBridge + SNS).
+- **Tecnologías:** AWS CloudTrail, Amazon OpenSearch, Amazon Athena, Amazon EventBridge.
+
+---
+
+#### Patrones de Diseño Relevantes (Considerando el repositorio y tecnologías)
+
+##### Patrones Creacionales
+- **Singleton:** Podría considerarse para clases cliente que gestionan la configuración centralizada de ciertos aspectos de seguridad, aunque en un entorno serverless con Lambdas, la gestión del estado y las instancias es diferente. A menudo, la "unicidad" se logra a través de la configuración del servicio de AWS (e.g., una única configuración de Cognito User Pool).
+
+##### Patrones Estructurales
+- **Facade:**
+  - `GestorClavesCustodia` actuaría como una fachada para la complejidad de interactuar con KMS, CloudHSM, Secrets Manager y la lógica Lambda de coordinación tripartita.
+  - `ServicioAutenticacionIdentidad` podría ser una fachada para las diversas funcionalidades de Cognito y Rekognition.
+
+- **Proxy:** Un Lambda@Edge o una función de API Gateway Authorizer pueden actuar como proxies para interceptar solicitudes, realizar validaciones de seguridad (token, IP, geografía) y luego pasar la solicitud al servicio backend o denegarla.
+
+- **Decorator:** Podría usarse para añadir capas de validación de seguridad de forma dinámica a ciertos flujos o llamadas API.
+
+
+##### Patrones de Comportamiento
+- **Chain of Responsibility:** En la autorización de API, una cadena de validadores podría verificar diferentes aspectos (token JWT, permisos de rol, cuotas de uso) antes de permitir el acceso al recurso. AppSync resolvers y API Gateway authorizers pueden implementar este concepto.
+- **Strategy:** Diferentes estrategias de autenticación (e.g., usuario/contraseña + MFA, federación SAML, biometría) podrían ser manejadas por ServicioAutenticacionIdentidad seleccionando la estrategia apropiada.
+- **Observer:** ServicioAuditoriaCentralizada y sus alertas (EventBridge + SNS) implementan este patrón, donde los servicios de monitoreo "observan" los logs de CloudTrail y notifican a los administradores o a otros sistemas ante eventos específicos.
+- **Command:**  Las operaciones administrativas de seguridad (ej. revocar una clave, deshabilitar un usuario) podrían encapsularse como comandos para su procesamiento y auditoría.
+
+---
+
+#### Dependencias Clave
+
+##### Internas
+- ServicioAutenticacionIdentidad interactúa con ModuloAutorizacionRBAC para obtener roles post-autenticación.
+- Ambos dependen de ServicioAuditoriaCentralizada para el logging.
+- GestorClavesCustodia es utilizado por otros módulos de seguridad y por componentes de la plataforma que requieren cifrado o firmas.
+
+
+##### Externas (Otros Componentes de Data Pura Vida)
+- **Todos los componentes funcionales** (Registro, Data Lake, Dashboard, Backoffice, etc.) dependen de este Componente Central de Seguridad para:
+    - Autenticar usuarios y sistemas.
+    - Autorizar accesos a sus recursos y funcionalidades.
+    - Obtener y utilizar claves para cifrado/descifrado y firmas.
+    - Ser protegidos por las capas de seguridad perimetral.
+- **Servicio de Notificaciones Transversal:**  
+  - Para enviar alertas de seguridad a administradores o usuarios.
+    
+##### Servicios Externos (AWS)
+- La lista es extensa y cubre prácticamente todos los servicios de seguridad de AWS mencionados en la sección de tecnologías: Cognito, IAM, KMS, Secrets Manager, CloudHSM, WAF, Lambda, CloudTrail, Macie, Signer, Encryption SDK, etc..
+- **Opcional:**  HashiCorp Vault.  
+
+
+### Módulo de Gestión de Datasets por el Usuario (Contribución a "Feliz compartiendo datos")
+
+#### Visión General y Patrones Arquitectónicos Clave
+
+Este módulo permite a los usuarios registrados (personas físicas o jurídicas) compartir sus datasets dentro del ecosistema Data Pura Vida. Proporciona las herramientas para cargar datos en múltiples formatos, definir metadatos descriptivos y técnicos (con asistencia de IA), configurar la naturaleza del dataset (público/privado, gratuito/pagado, permanente/temporal), establecer modelos de cobro, y gestionar los permisos de acceso. También orquesta la validación inicial y el inicio del proceso ETDL (Extract, Transform, Load) que se ejecuta en el backend.
+
+##### Tecnologías
+- **Frontend:** React + Tailwind CSS.
+- **Backend/Orquestación:** Amplify (para el frontend), AWS AppSync (GraphQL) o API Gateway (REST) + AWS Lambda, Amazon S3, AWS Glue (Data Catalog, Jobs, Deequ, DataBrew), Amazon SageMaker, Amazon EventBridge, SNS.
+
+##### Patrones Arquitectónicos Sugeridos
+
+- **API-Driven y Serverless:** La interfaz de usuario interactuará con servicios backend serverless para todas las operaciones de gestión de datasets.
+- **Component-Based (Frontend):** Se utilizarán componentes de React para la interfaz de carga, el asistente de metadatos, la configuración de acceso y precios, etc.
+- **Event-Driven Architecture (EDA):** La finalización de la carga de un archivo o la configuración de una conexión a base de datos puede disparar eventos que inicien procesos de validación, extracción de metadatos por IA, o el pipeline ETDL en el Data Lake.
+- **Staged Upload / Asynchronous Processing:** Para datasets grandes, la carga y el procesamiento subsecuente serán procesos asíncronos.
+
+---
+
+#### Clases/Módulos Principales y sus Responsabilidades
+
+##### Frontend (React + Tailwind CSS + AWS Amplify)
+
+**`GestionDatasetsView` (Contenedor Principal/Página)**  
+- **Responsabilidad:**  Interfaz principal para que el usuario vea sus datasets compartidos, inicie el proceso de compartir un nuevo dataset y gestione los existentes.
+
+**`FormularioCargaDataset` (Componente React)**  
+- **Responsabilidad:**  Guiar al usuario a través del proceso de compartir un nuevo dataset. Incluye:
+    - Selección del método de carga (archivo, API, conexión a BD).
+    - Configuración de parámetros de conexión (de forma cifrada).
+    - Subida de archivos (interactuando con Amplify Storage hacia S3).
+- **Tecnologías:** React, Amplify Storage.
+
+**`AsistenteMetadatosDataset` (Componente React)**  
+- **Responsabilidad:**   Permitir al usuario ingresar y editar metadatos descriptivos (nombre, descripción) y técnicos. Podría interactuar con un servicio backend para obtener sugerencias de metadatos generadas por IA (basadas en Glue DataBrew o SageMaker) sobre las columnas del dataset.
+- **Métodos Clave:** cargarMetadatosSugeridos(idDatasetTemporal), guardarMetadatos().
+
+**`ConfiguradorAccesoPrecioDataset` (Componente React)**  
+- **Responsabilidad:**   Permitir al usuario definir si el dataset es público o privado, gratuito o pagado, permanente o con disponibilidad temporal. Si es pagado, configurar los montos de acceso. Definir control granular de acceso (por institución, persona, grupo). Permitir seleccionar campos específicos a cifrar.
+
+**`DatasetManagementAPIClient` (Módulo/Clase en Frontend)**  
+- **Responsabilidad:**  Encapsular la comunicación con el API backend para todas las operaciones relacionadas con la gestión de datasets.
+
+##### Backend (AWS Lambda, AppSync/API Gateway, S3, Glue, SageMaker, DynamoDB, etc.)
+
+**`DatasetUploadHandler` (Función Lambda / Controlador API)**  
+- **Responsabilidad:**  Manejar las solicitudes de carga de nuevos datasets. Para cargas de archivos, podría generar URLs pre-firmadas de S3. Para conexiones a BD o APIs, almacena de forma segura los parámetros de conexión (cifrados, usando Secrets Manager). Inicia el proceso de validación y ETDL.
+- **Tecnologías:** Lambda, S3, Secrets Manager.
+
+**`MetadataExtractionService` (Función Lambda, integrado con Glue DataBrew/SageMaker)**  
+- **Responsabilidad:**  Una vez que los datos están en una ubicación temporal (S3), este servicio utiliza AWS Glue DataBrew o modelos de SageMaker para analizar las columnas del dataset, detectar tipos de datos, generar estadísticas y proponer metadatos técnicos útiles para la IA y el catálogo.
+- **Tecnologías:** Lambda, Glue DataBrew, SageMaker.
+
+**`DatasetConfigurationService` (Función Lambda / Controlador API)**  
+- **Responsabilidad:**  Almacenar y gestionar la configuración de cada dataset: nombre único, descripción, metadatos, tipo (público/privado), modelo de cobro, reglas de acceso, campos a cifrar, disponibilidad temporal, etc. Probablemente use DynamoDB para esta configuración.
+- **Tecnologías:** Lambda, DynamoDB.
+
+**`DatasetLifecycleManager` (Función Lambda, EventBridge)**  
+- **Responsabilidad:**  Gestionar la disponibilidad temporal de datasets, la recurrencia de cargas (completas o por deltas) y los parámetros para deltas (campos diferenciales, frecuencia por "timed pull" o notificación mediante callbacks ).
+- **Tecnologías:** Lambda, EventBridge para "timed pull", SNS/API Gateway para callbacks.
+
+**`ETDLOrchestratorTrigger` (Función Lambda o Evento)**  
+- **Responsabilidad:**  Iniciar el pipeline ETDL en el Núcleo del Data Lake una vez que un dataset es cargado y configurado. Pasa la información necesaria (ubicación de datos, configuración, metadatos) al Data Lake. Podría ser un evento de S3 que active una Lambda, o una invocación directa.
+
+**`DatasetAccessPolicyManager` (Función Lambda, integrado con Lake Formation/IAM)**  
+- **Responsabilidad:**  Traducir las configuraciones de acceso definidas por el usuario en políticas técnicas aplicables (e.g., políticas de IAM, permisos en Lake Formation) para controlar quién puede acceder a qué datos.
+
+---
+
+#### Patrones de Diseño Relevantes (Considerando el repositorio y tecnologías)
+
+##### Patrones Creacionales
+- **Builder:** Para la construcción del objeto DatasetConfiguration que puede tener muchos parámetros opcionales (precio, disponibilidad temporal, campos a cifrar, reglas de acceso granular, etc.). El frontend podría guiar al usuario a través de un asistente (Builder) para completar esta configuración.
+- **Prototype:** Si los usuarios pueden crear nuevos datasets basados en la configuración de uno existente (como una plantilla), el patrón Prototype sería útil.
+
+##### Patrones Estructurales
+- **Facade:** DatasetUploadHandler y DatasetConfigurationService actúan como fachadas para las operaciones complejas de backend relacionadas con la carga y configuración de datasets.
+
+- **Decorator:** Se podría usar para añadir dinámicamente funcionalidades a un dataset, como diferentes capas de validación de calidad de datos o enriquecimiento de metadatos, antes de que se active en el Data Lake.
+
+##### Patrones de Comportamiento
+- **Strategy:**
+    - Diferentes estrategias de carga de datos (archivo, API, BD SQL, BD NoSQL) podrían ser implementadas usando este patrón.
+    - Diferentes estrategias para la detección de deltas o la aplicación de reglas de calidad podrían ser seleccionadas.
+- **Observer:** Cuando un dataset cambia de estado (e.g., "validado", "ETDL completado", "publicado"), otros componentes (como el Catálogo o el sistema de Notificaciones) podrían ser notificados.
+- **State:** Un dataset pasará por varios estados (Subiendo, PendienteMetadatos, ValidandoFormato, ProcesandoETDL, Activo, Inactivo, Archivado). Este patrón (posiblemente gestionado con Step Functions o una máquina de estados en DynamoDB/Lambda) ayudaría a manejar la lógica de cada estado.
+- **Template Method:**  Un proceso base para la ingesta y validación de datasets podría definirse, y pasos específicos (como la extracción de metadatos exacta o las reglas de validación de contenido) podrían ser personalizados según el tipo de fuente o datos.
+- **Command:**  Las acciones de usuario como "Publicar Dataset", "Desactivar Dataset", "Actualizar Metadatos" podrían encapsularse como comandos.
+
+---
+
+#### Dependencias Clave
+
+##### Internas (dentro del Módulo de Gestión de Datasets):
+- Los componentes UI dependen del DatasetManagementAPIClient.
+- Los manejadores API/Lambda (DatasetUploadHandler, DatasetConfigurationService) coordinan con servicios de backend más pequeños (MetadataExtractionService, DatasetLifecycleManager).
+
+##### Externas (hacia otros Componentes de Data Pura Vida)
+- **Núcleo del Data Lake y Procesamiento Backend**  Este módulo es el principal proveedor de datos crudos y configuración para el Data Lake. ETDLOrchestratorTrigger inicia los flujos en el Data Lake.
+- **Módulo de Validación de Documentos con IA:**  No directamente, pero la IA para la extracción/sugerencia de metadatos (Glue DataBrew, SageMaker) es una dependencia conceptual.
+- **Componente Central de Seguridad:**
+    - Para almacenar de forma segura los parámetros de conexión a bases de datos externas (usando AWS Secrets Manager).
+    - Para aplicar el cifrado selectivo de campos.
+    - Para la autenticación/autorización del usuario que gestiona el dataset.
+    - Para la gestión de las políticas de acceso que se traducirán a permisos técnicos.
+- **Catálogo de Datasets:**  Una vez que un dataset es aprobado y procesado, su información (metadata) se publica en el Catálogo.
+- **Servicio de Notificaciones Transversal:**  Para notificar al usuario sobre el estado de sus datasets (e.g., carga completada, procesado, errores).
+    
+##### Servicios Externos (AWS)
+- **Almacenamiento:**  Amazon S3 (para la subida inicial de archivos).
+- **Procesamiento y Metadatos:**  AWS Glue (Data Catalog, Jobs, Deequ, DataBrew ), Amazon SageMaker (para IA en metadatos y calidad).  
+- **Lógica de Negocio y APIs:**  AWS Lambda, AWS AppSync/API Gateway.  
+- **Gestión de Secretos:**  AWS Secrets Manager.  
+- **Gestión de Configuración/Estado:**  Amazon DynamoDB. 
+- **Orquestación de Eventos/Tareas Programadas:**  Amazon EventBridge, Amazon SNS.
+  
+
+
+
+
