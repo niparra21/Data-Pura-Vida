@@ -1461,6 +1461,123 @@ Dada la naturaleza de este componente, las "clases" o "módulos" representan pri
 
 
 
+### Catálogo de Datasets
+
+#### Visión General y Patrones Arquitectónicos Clave
+
+El Catálogo de Datasets es el componente central donde los usuarios (tanto proveedores como consumidores de datos) pueden explorar, buscar y entender los datasets disponibles en el ecosistema Data Pura Vida. Proporciona una interfaz para navegar por los datasets, ver sus metadatos detallados (descriptivos, técnicos, de uso, y de gobernanza), filtrar según diversos criterios y, para datasets que requieren adquisición, iniciar el proceso de compra.
+
+##### Tecnologías
+- **Frontend:** React + Tailwind CSS.
+- **Backend/Servicios de Datos:** AWS AppSync (GraphQL) o API Gateway (REST) + AWS Lambda, AWS Glue Data Catalog, Amazon Athena, Amazon DynamoDB, AWS Lake Formation, Amazon S3.
+
+##### Patrones Arquitectónicos Sugeridos
+
+- **API-Driven y Serverless:** El frontend interactuará con servicios backend serverless para buscar, filtrar y obtener detalles de los datasets.
+- **Component-Based (Frontend):** Se utilizarán componentes de React para la lista de datasets, los filtros, la vista detallada de la ficha del dataset, etc.
+- **Data Mesh (Principios):** Aunque no es un patrón de diseño de software per se, el catálogo es un elemento clave en una arquitectura de malla de datos, promoviendo el descubrimiento y la autogestión de "productos de datos" (los datasets). Los metadatos y la gobernanza son cruciales
+
+---
+
+#### Clases/Módulos Principales y sus Responsabilidades
+
+##### Frontend (React + Tailwind CSS)
+
+**`CatalogoView` (Contenedor Principal/Página)**  
+- **Responsabilidad:**  Orquestar la interfaz de usuario principal del catálogo, incluyendo la barra de búsqueda, los filtros, y la visualización de la lista de resultados de datasets.
+- 
+**`FiltrosDataset` (Componente React)**  
+- **Responsabilidad:**  Proveer los controles de UI para que los usuarios puedan filtrar los datasets por nombre, categoría, tipo (público/privado), modelo de precio (gratuito/pagado), etiquetas, etc.
+- **Interacciones:**  Actualiza la consulta que se envía al CatalogoServiceAPIClient.
+  
+**`ListaResultadosDataset` (Componente React)**  
+- **Responsabilidad:**   Mostrar una lista paginada de datasets que coinciden con los criterios de búsqueda/filtrado. Cada item de la lista es un ResumenDatasetCard.
+  
+**`ResumenDatasetCard` (Componente React)**  
+- **Responsabilidad:**   Mostrar información resumida de un dataset (nombre, descripción breve, proveedor, tipo, precio si aplica) y permitir la navegación a la FichaDetalladaDatasetView.
+
+**`FichaDetalladaDatasetView` (Contenedor/Página o Modal)**  
+- **Responsabilidad:**  Mostrar toda la información detallada de un dataset específico, incluyendo:
+    - Metadatos descriptivos (nombre, descripción completa, origen, frecuencia de actualización).
+    - Metadatos técnicos (esquema de columnas, tipos de datos, sugerencias de IA sobre columnas).
+    - Políticas de uso y condiciones (licencia, duración del acceso, restricciones).
+    - Información de precio y enlace al módulo de compras si es un dataset pagado.
+    - Posibles visualizaciones de muestra o estadísticas del dataset (podría usar QuickSight Embedded).
+
+**`CatalogoServiceAPIClient` (Módulo/Clase en Frontend)**  
+- **Responsabilidad:**  Encapsular la comunicación con el API backend para buscar datasets, obtener detalles, etc.
+
+##### Backend (AWS Lambda, AppSync/API Gateway, Glue Data Catalog, Athena, DynamoDB, Lake Formation)
+
+**`DatasetSearchService` (Función Lambda / Resolver AppSync)**  
+- **Responsabilidad:**  Procesar las solicitudes de búsqueda y filtrado de datasets. Consulta el AWS Glue Data Catalog (posiblemente a través de Athena para búsquedas más complejas o sobre metadatos extendidos) y/o una tabla de DynamoDB que podría indexar metadatos enriquecidos para búsquedas rápidas. Aplica filtros de acceso basados en el usuario (usando Lake Formation para la visibilidad de datasets privados/restringidos).
+- **Tecnologias:**  Lambda, Athena, Glue Data Catalog, DynamoDB, Lake Formation.
+
+**`DatasetDetailService` (Función Lambda / Resolver AppSync)**  
+- **Responsabilidad:**  Obtener la información detallada (ficha del dataset) para un dataset específico. Combina información del Glue Data Catalog (metadatos técnicos) con metadatos descriptivos, de negocio y políticas de uso almacenadas en DynamoDB o S3 (para documentos de políticas más extensos).
+- **Tecnologias:**  Lambda, Glue Data Catalog, DynamoDB, S3.
+
+**`MetadataEnrichmentService` (Módulo/Proceso Backend - podría ser parte del pipeline del Data Lake)**  
+- **Responsabilidad:**  (Aunque no es directamente parte del catálogo en tiempo real, es crucial para su funcionamiento) Enriquecer los metadatos técnicos del Glue Data Catalog con información de negocio, descriptiva, de calidad, y de uso, almacenándolos en DynamoDB o S3 para ser servidos por DatasetDetailService. Esto puede incluir la salida de los análisis de IA sobre las columnas de los datasets.
+- **Tecnologias:**  Lambda, DynamoDB, S3.
+
+**`DatasetAccessAdvisor` (Módulo/Clase en Backend Lambda)**  
+- **Responsabilidad:**  Integrado con DatasetSearchService y DatasetDetailService, utiliza AWS Lake Formation y las políticas definidas para determinar si un dataset específico debe ser visible o accesible para el usuario que realiza la consulta, especialmente para datasets privados o con acceso restringido.
+- **Tecnologias:**  Lambda, AWS Lake Formation.
+
+---
+
+#### Patrones de Diseño Relevantes (Considerando el repositorio y tecnologías)
+
+##### Patrones Creacionales
+- **Builder:** Si la "Ficha Detallada del Dataset" se construye dinámicamente a partir de múltiples fuentes de metadatos (Glue, DynamoDB, S3), un Builder podría ensamblar el objeto de respuesta complejo.
+  
+##### Patrones Estructurales
+- **Facade:**
+    - CatalogoServiceAPIClient en el frontend simplifica la interacción con las APIs del catálogo.
+    - DatasetSearchService y DatasetDetailService en el backend actúan como fachadas que coordinan la obtención de datos de Glue Data Catalog, Athena, DynamoDB y Lake Formation.
+ 
+- **Composite:** Si las categorías de datasets son jerárquicas, el patrón Composite podría usarse para representar y navegar estas categorías en la UI de filtros.
+
+- **Flyweight:** Si se muestran muchos ResumenDatasetCard con información repetitiva (íconos, etiquetas comunes), Flyweight podría optimizar el uso de memoria en el frontend (aunque React ya tiene sus propias optimizaciones de renderizado).
+
+##### Patrones de Comportamiento
+- **Strategy:**
+    - Diferentes estrategias de búsqueda podrían implementarse en DatasetSearchService (búsqueda por palabras clave, búsqueda semántica si se implementa IA, búsqueda facetada).
+    - Diferentes estrategias de presentación para la FichaDetalladaDatasetView según el tipo de dataset o el rol del usuario.
+- **Observer:** Si un dataset es actualizado (nueva versión, cambio de metadatos, cambio de precio), los usuarios que lo hayan marcado como favorito o lo estén usando podrían ser notificados. El catálogo podría suscribirse a eventos del "Módulo de Gestión de Datasets" o del "Núcleo del Data Lake".
+- **Iterator:**  Para la paginación de resultados en ListaResultadosDataset.
+- **Chain of Responsibility:**  En el DatasetSearchService, se podría usar una cadena para aplicar secuencialmente diferentes filtros o criterios de búsqueda y permisos de acceso.
+
+---
+
+#### Dependencias Clave
+
+##### Internas (dentro del Núcleo del Data Lake):
+- Los componentes UI (CatalogoView, FiltrosDataset, ListaResultadosDataset, FichaDetalladaDatasetView) dependen del CatalogoServiceAPIClient.
+- Los servicios backend (DatasetSearchService, DatasetDetailService) dependen de las fuentes de metadatos y permisos.
+
+##### Externas (hacia otros Componentes de Data Pura Vida)
+- **Núcleo del Data Lake y Procesamiento Backend**  El catálogo consume metadatos técnicos directamente del AWS Glue Data Catalog, que es poblado y gestionado por el Data Lake. También puede consumir metadatos enriquecidos que son un subproducto de los pipelines del Data Lake.
+- **Módulo de Gestión de Datasets por el Usuario:** Cuando un proveedor de datos configura y publica un dataset, esa información (metadata, políticas) debe reflejarse en el catálogo.
+- **Módulo de Compras de Datasets:** La ficha detallada de un dataset pagado debe enlazar o iniciar el flujo de compra en este módulo.
+- **Dashboard y Exploración de Datos:**  El catálogo puede ofrecer enlaces a visualizaciones de muestra (QuickSight Embedded) o permitir abrir datasets directamente en el Dashboard (si el usuario tiene acceso).
+- **Componente Central de Seguridad:**  Para la autenticación del usuario que navega el catálogo y para la aplicación de políticas de visibilidad de datasets (a través de Lake Formation).
+    
+##### Servicios Externos (AWS)
+- **Metadatos y Consultas:**  AWS Glue Data Catalog, Amazon Athena, Amazon DynamoDB (para metadatos enriquecidos/de negocio), Amazon S3 (para documentos de políticas o metadatos extensos).
+- **Gobernanza de Acceso:**  AWS Lake Formation.  
+- **Lógica de Negocio y APIs:**  AWS Lambda, AWS AppSync/API Gateway.  
+- **Visualización (opcional, para muestras):**  Amazon QuickSight Embedded.  
+
+ 
+
+  
+
+
+
+
+
 
 
 
