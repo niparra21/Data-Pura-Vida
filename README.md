@@ -1475,6 +1475,139 @@ These modules represent the software components (mainly AWS Lambda functions) th
 - **Protocols:**  HTTPS (mandatory for all external communications), REST, SOAP (if any third-party requires it), third-party specific data formats (JSON, XML).
 
 
+### Layer: Cloud (Infrastructure and Cloud Services as a Platform)
+
+#### Overview and Key Architectural Patterns
+
+The Cloud Layer encompasses the underlying infrastructure and platform services provided by Amazon Web Services (AWS), upon which the Data Pura Vida ecosystem is built and operated. This layer’s design focuses on the selection, configuration, and orchestration of these services to meet the system’s scalability, high availability, security, performance, and cost optimization requirements. Extensive use of managed AWS services is prioritized to minimize operational burden, maximize agility, and leverage best practices inherent to cloud environments.
+
+##### Primary Cloud Provider: Amazon Web Services (AWS)
+
+##### Key Architectural Patterns
+
+- **Infrastructure as Code (IaC):** All cloud infrastructure (VPCs, subnets, load balancers, IAM roles, service configurations, etc.) will be defined and managed as code using tools like AWS CloudFormation, AWS CDK, or Terraform. This ensures automation, consistency, versioning, and environment reproducibility.
+- **AWS Well-Architected Framework:** The design adheres to the pillars of this framework: Operational Excellence, Security, Reliability, Performance Efficiency, and Cost Optimization.
+- **Managed Services:**  Maximized usage of AWS managed services (Lambda, S3, DynamoDB, RDS, Cognito, KMS, AppSync, API Gateway, Glue, SageMaker, QuickSight, etc.) to offload underlying infrastructure management to AWS.
+- **Scalability and Elasticity:** Designed for automatic scaling (horizontally and/or vertically) based on demand, leveraging AWS services' autoscaling capabilities.
+- **High Availability (HA) and Resilience:** Deployment of critical resources across multiple AWS Availability Zones (AZs). Use of services with built-in redundancy and failover capabilities. Disaster Recovery (DR) is designed according to the system's RTO/RPO objectives.
+- **Cloud Security:** Follows the shared responsibility model. Secure configuration of all AWS services, using a defense-in-depth approach (VPCs, subnets, security groups, NACLs, IAM, encryption, WAF, etc.).
+
+---
+
+#### Main Services and Infrastructure Configurations
+
+This section outlines the main AWS services and key aspects of their configuration that support the application layers (Frontend, Backend, Data) and the system's functionalities.
+
+##### 1. Networking and Connectivity:
+
+**`Amazon Virtual Private Cloud (VPC)` **  
+- **Responsibility:**  Create a logically isolated private network within AWS to host resources.
+- **Configuration:**  Design VPCs with public subnets (for internet-facing resources like ALBs, NAT Gateways) and private subnets (for backend resources like Lambdas in VPC, RDS, ElastiCache), distributed across multiple AZs. Configure Route Tables, Internet Gateways, NAT Gateways. Implement Security Groups and Network ACLs for detailed traffic control and network segmentation.
+  
+**`Amazon API Gateway and AWS AppSync` **  
+- **Responsibility:**  Secure, scalable entry points for REST APIs (API Gateway) and GraphQL APIs (AppSync) that expose the backend layer.
+- **Configuration:**  Integrated with AWS Lambda. Authentication/authorization setup (Cognito Authorizers, IAM, Lambda Authorizers). Throttling, caching, and logging enabled. Integrated with AWS WAF.
+
+**`Amazon CloudFront` **  
+- **Responsibility:**  Content Delivery Network (CDN) to globally distribute the frontend (React/Next.js) and APIs with low latency and high performance.
+- **Configuration:**  Origins (S3, ALBs, API Gateway), cache behaviors, SSL/TLS certificates (via AWS Certificate Manager - ACM), WAF integration, and optionally Lambda@Edge for edge logic.
+
+**`AWS PrivateLink` **  
+- **Responsibility:**  Provide private connectivity between VPCs and AWS or third-party hosted services without exposing traffic to the public internet.
+
+##### 2. Compute:
+
+**`AWS Lambda` **  
+- **Responsibility:**  Main platform for executing serverless business logic, third-party adapters, data processing functions, and event orchestration.
+- **Configuration:**  Runtimes (Node.js, Python, etc.), memory and timeout settings, IAM roles with least privilege, VPC integration to access private resources (RDS, ElastiCache), triggers (API Gateway, AppSync, S3, EventBridge, etc.), Lambda Layers for dependencies.
+
+**`AWS AppRunner` **  
+- **Responsibility:**  Managed service for deploying and running containerized web applications, used for the Backoffice portal (Next.js).
+- **Configuration:**  Connects to code repositories (GitHub) or container registries (ECR), environment variables, autoscaling, VPC integration.
+
+**`AWS Fargate` **  
+- **Responsibility:** (Optional, for specific workloads) Serverless compute for containers (Amazon ECS or EKS) without managing EC2 infrastructure. Can be used for long-running batch jobs or services requiring more persistent execution environments than Lambda or AppRunner.
+
+##### 3. Storage (See Data Layer for data structure details):
+
+**Amazon S3:**  Primary storage for the Data Lake, documents, templates, backups, and frontend hosting. Configured with versioning, encryption (SSE-KMS), lifecycle policies, and logging.
+**Apache Iceberg (on S3):**  Table format for the Data Lake, managed by engines like Glue and Athena.
+**Amazon DynamoDB:**  Managed NoSQL database for transactional application data.
+**Amazon RDS:**  Managed relational database (PostgreSQL, MySQL) for Backoffice data or others requiring relational structure. Configured with Multi-AZ and encryption.
+**Amazon Neptune:**  Managed graph database service for relationships between datasets.
+  
+##### 4. Application Integration and Orchestration:
+
+**Amazon EventBridge:**  Serverless event bus to connect applications and trigger workflows.
+**Amazon SNS:**  Pub/sub messaging service for notifications and decoupling.
+**Amazon SQS:**  (Implicit for decoupled architectures with Lambda) Message queue service for asynchronous tasks.
+**AWS Step Functions:**  To orchestrate multi-step serverless workflows.
+
+##### 5. Data Catalog and Governance (See Data Layer):
+
+**AWS Glue Data Catalog:**  Central repository for technical metadata.
+**AWS Lake Formation:**  To build, secure, and manage data lakes with centralized permissions.
+
+##### 6. AI/ML Services (Platform):
+
+**Amazon SageMaker:**  Platform for training, deploying, and monitoring ML models.
+**Pretrained AI Services:**  Amazon Textract (OCR), Amazon Comprehend (NLP), Amazon Rekognition (image/video/biometrics), Amazon Entity Resolution (record matching). Their availability and base configuration are part of the cloud layer.
+
+##### 7. Analytics and Business Intelligence (Platform):
+
+**AWS Glue (ETL, DataBrew):**  For data preparation and transformation.
+**Amazon Athena:**  For interactive SQL queries over the Data Lake.
+**Amazon QuickSight (including Q and Embedded):**  For data visualization and BI.
+**Amazon Macie:**  For sensitive data discovery and protection.
+
+##### 8. Infrastructure Security and Identity Management:
+
+**AWS IAM:**  Definition of users, groups, roles, and policies for least privilege access to all AWS resources.
+**AWS Cognito:**  For managing end-user identities on portals (authentication, MFA, federation).
+**AWS KMS:**  Centralized key management for encryption.
+**AWS Secrets Manager:**  Secure storage of secrets.
+**AWS CloudHSM:**  (Optional/Specific) Hardware security modules for tripartite custody.
+**AWS WAF:**  Web Application Firewall for protecting web apps and APIs.
+**AWS Config:**  To evaluate, audit, and record resource configurations.
+**AWS Artifact:**  Access to AWS compliance reports.
+
+##### 9. Deployment, Management, and Monitoring:
+
+**IaC Tools (AWS CloudFormation, AWS CDK, Terraform):** For defining and provisioning infrastructure as code.
+**AWS Amplify:**  Platform for building and deploying full-stack web apps (frontend and simple backend).
+**AWS AppRunner:**  Used for Backoffice portal deployment.
+**Amazon CloudWatch:**  For monitoring logs, metrics, and configuring alarms.
+**AWS CloudTrail:**  Logs all AWS API calls for auditing.
+**AWS X-Ray:**  For analyzing and debugging distributed applications.
+
+---
+
+#### Relevant Design/Architecture Patterns (Applied to Cloud Infrastructure)
+
+- **Infrastructure as Code (IaC):** Foundational practice for managing all AWS resources.
+- **Immutable Infrastructure:** Updates are deployed via new instances/versions rather than modifying existing ones.
+- **Auto-Scaling:** Services configured to scale dynamically based on load.
+- **Multi-AZ Deployment:** Resources deployed across multiple Availability Zones for high availability and resilience.
+- **Least Privilege Access (IAM):** Grant only strictly necessary permissions.
+- **Data Perimeter / Security Groups / NACLs:** Strong network controls to isolate resources and control traffic flow.
+- **Serverless First:** Prioritize serverless services to reduce operational overhead.
+- **Blue/Green or Canary Deployments:** Deployment strategies for new application versions (enabled by services like API Gateway, CloudFront, Lambda aliases).
+- **Hub and Spoke VPC Design (Optional):** Considered if network complexity increases, for centralized connectivity.
+
+---
+
+#### Key Dependencies
+
+##### Internal (within the Cloud Layer):
+- Interdependency between AWS services (e.g., Lambda requires IAM roles, API Gateway integrates with Lambda, S3 triggers Lambda/EventBridge).
+- VPC configuration is fundamental for many services.
+  
+##### External
+- **Frontend, Backend, and Data Layers of Data Pura Vida:**  These layers run on and heavily utilize the services configured in this Cloud Layer. The Cloud Layer is the enabling platform.
+- **External Identity Providers:** If federation with Cognito is used.
+- **Domain Registrars and DNS Providers**
+- **SSL/TLS Certificate Providers:** AWS Certificate Manager
+
 
 
 
