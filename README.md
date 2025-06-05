@@ -762,6 +762,85 @@ This component enforces organizational governance and system control, allowing p
 
 This comprehensive decomposition, visually represented in the linked diagrams and aligned with the detailed requirements, forms a clear foundation for the strategic selection of technologies, ensuring that all functionalities and objectives of the Data Pura Vida ecosystem will be effectively implemented and supported.
 
+# Technology Stack - Data Pura Vida
+
+## 1. Registration & Authentication
+### Identity & Access
+- **AWS Cognito**: User authentication, MFA (SMS/TOTP), and group management.
+- **Amazon Rekognition**: Biometric validation (facial recognition, liveness check).
+- **AWS IAM Identity Center**: RBAC (role and permission management).
+- **AWS WAF + Lambda@Edge**: Geographic restriction (Costa Rica IPs only) and attack protection.
+
+### Document Validation
+- **Amazon Textract**: Data extraction from documents (IDs, certificates, etc.).
+- **Amazon Comprehend**: Document classification by type.
+- **SageMaker**: Custom models for format validation, readability, and consistency.
+- **DynamoDB**: Storage of validation records and statuses (pending/approved).
+
+### Advanced Security
+- **AWS KMS**: Cryptographic key generation and rotation (symmetric/asymmetric).
+- **Secrets Manager + CloudHSM**: Tripartite key custody (KMS + external HSM + organization).
+- **HashiCorp Vault (optional)**: Centralized secret management.
+
+## 2. Data Management (DataLake)
+### Storage & Processing
+- **Amazon S3**: Primary storage for datasets (structured/semi-structured).
+- **AWS Glue**: Automated ETL, data cataloging, and schema detection.
+- **Apache Iceberg**: Versioning and delta loads management.
+- **Amazon Athena**: SQL queries on S3 data.
+
+### Quality & Transformation
+- **AWS Glue DataBrew**: Data cleaning and normalization with AI.
+- **SageMaker**: Advanced modeling, deduplication, and data enrichment.
+- **Amazon Deequ**: Quality validation (integrity, format).
+
+### Security & Governance
+- **AWS Lake Formation**: Access control (RLS/Row-Level Security) and auditing.
+- **Amazon Macie**: Sensitive data protection (automatic detection).
+- **KMS + TLS**: Encryption at rest/in transit.
+
+## 3. Visualization & Dashboards
+- **Amazon QuickSight**:
+  - AI-powered dashboard generation (QuickSight Q).
+  - Embedded visualization (Embedding SDK).
+  - Export restrictions (download blocking).
+- **Athena + Glue**: Data preview in "sample" mode.
+
+## 4. Monetization & Dataset Purchases
+- **Stripe Connect + SINPE API**: Payment processing (cards, transfers).
+- **DynamoDB**: Transaction records and associated permissions.
+- **SES/Pinpoint**: Post-purchase notifications (email/SMS).
+
+## 5. Backend & API
+- **AWS AppSync**: Secure GraphQL API (JWT/MFA validation).
+- **API Gateway**: REST APIs for external integrations.
+- **Lambda**: Business logic (validations, approval flows).
+- **Step Functions**: Complex process orchestration (e.g., tripartite custody).
+
+## 6. Backoffice (Administration)
+- **Next.js + App Runner**: Admin interface (user/dataset management).
+- **CloudTrail + OpenSearch**: Action auditing and traceability.
+- **AWS Config**: Compliance (security policies).
+
+## 7. Artificial Intelligence (AI)
+- **SageMaker**:
+  - ETDL flow automation (Extract, Transform, Clean, Load).
+  - Dataset relationship modeling (data graph with Amazon Neptune).
+  - Data quality anomaly detection.
+- **QuickSight Q**: Automated visualization generation via NLP.
+
+## 8. Monitoring & Operations
+- **CloudWatch**: Performance metrics, alarms.
+- **X-Ray**: Microservice tracing.
+- **EventBridge**: Event automation (e.g., recurring loads).
+
+## 9. Additional Technologies
+- **React.js (Frontend)**: Dynamic forms (Amplify Studio).
+- **DynamoDB Streams**: Data change traceability.
+- **SNS/SQS**: Notifications and async processing queues.
+
+---
+
 ## Customer Journeys
 
 ### Journey #1 (a company representative, register and validation)
