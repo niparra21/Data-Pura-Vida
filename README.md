@@ -883,6 +883,228 @@ Imagine our AI system is a prestigious artisanal workshop. Its specialty is taki
 
 ![Imagen del Collaborative Pattern #3](./CollaborativePattern.png)
 
+
+## Arquitectura de clases, patrones y dependencias
+
+### Layer: Frontend
+
+#### Overview and Key Architectural Patterns
+
+The Frontend layer constitutes the user interface for all interactions with the Data Pura Vida ecosystem, both for end users (citizens, companies, researchers) and for system administrators via the Backoffice portal. Its design focuses on providing an intuitive, accessible, responsive, and secure user experience (UX), facilitating information presentation, data capture, and seamless communication with the Backend layer.
+
+##### Main Technologies
+- **Main Portal:** React.js integrated with AWS Amplify for connecting with backend services (authentication, storage, APIs).
+- **Backoffice Portal:** Next.js (a framework built on React) to leverage server-side rendering (SSR) and static site generation (SSG) where beneficial, also integrated with AWS Amplify and deployed using AWS AppRunner.
+- **Styles:** Tailwind CSS for utility-first development, ensuring a modern, customizable, and responsive design.
+- **Dashboards (embedding):** Amazon QuickSight Embedded for data visualization.
+
+##### Key Architectural Patterns
+
+- **Component-Based Architecture (React):** The system will be built on well-defined, reusable, cohesive, and testable React components, styled with Tailwind CSS, ensuring visual consistency and development efficiency. Accessibility (WCAG) will be prioritized.
+- **Single Page Application (SPA) / Next.js Hybrid:** The main portal will operate as a SPA. The Backoffice with Next.js will use a hybrid rendering approach (SSR/SSG/CSR) to optimize performance and experience.
+- **Strategic State Management:**
+    - Local component state: Native React hooks (useState, useReducer).
+    - Server data handling and complex global state: React Query (TanStack Query) will be used for server data fetching, caching, synchronization, and updating. Zustand will be used for managing shared UI global state between unrelated components due to its simplicity and efficiency.
+- **API-Driven:** All communication with business logic and data will be routed through a well-defined API service layer in the frontend, interacting with AWS AppSync (GraphQL) and/or Amazon API Gateway (REST).
+- **Responsive Design:** Responsive design principles will be applied via Tailwind CSS for optimal experience across different devices.
+- **Progressive Web App (PWA):** Future Consideration: PWA features such as service workers and push notifications (potentially with Amazon Pinpoint) may be incorporated to enhance the user experience.
+  
+---
+
+#### Main React Classes/Modules/Components and Their Responsibilities
+
+##### 1. General Structure and Layout Components:
+
+**`App` (React/Next.js Root Component)**  
+- **Responsibility:**  Entry point of the application. Sets up routing (React Router or Next.js router), global context providers (React Query Client, Zustand store, Tailwind theme, AuthService). Initializes singleton frontend services like APIServiceClient.
+  
+**`MainLayout / BackofficeLayout` (React/Next.js Components)**  
+- **Responsibility:**  Define the main visual structure (header, footer, navigation, content area) for the user portal and Backoffice, respectively. Implement responsive base and may contain logic to show/hide elements based on user roles.
+  
+**`AuthGuard` (Higher-Order Component or Custom React Hook)**  
+- **Responsibility:**  Protects routes requiring authentication and/or specific roles, using AuthService to verify state and redirect if necessary.
+  
+**`ErrorBoundary` (React Component)**  
+- **Responsibility:**   Captures JavaScript errors in child components, logs them, and shows a fallback UI. Multiple instances will be implemented for granularity.
+
+##### 2. UI Kit / Common Components (React and Tailwind CSS):
+
+- **Responsibility:**  Internal collection of base UI components, reusable, accessible (WCAG), and consistently styled, forming the visual design system. Use of Headless UI with Tailwind CSS is considered.
+- **Examples:** Button, InputField (with validation), SelectField, CheckboxField, ModalDialog, DataTable, CardDisplay, Spinner, AlertMessage, Notificatio nToast.
+
+##### 3. Functional Modules (Container Views and Specific Presentation Components):
+
+**`Entity Registration Module`**  
+- **RegistroView:**  Orchestrates the registration flow.
+- **TipoEntidadSelector:**  Allows selecting the type of entity.
+- **FormularioDinamicoRegistro:**  Renders forms based on JSON schemas (from backend) and entity type. Validates inputs with Yup.
+- **UploaderDocumentosRegistro:**  Manages file uploads to S3 via Amplify Storage, with previews and client-side validations.
+
+**`User Dataset Management Module`**  
+- **GestionDatasetsView:**  Lists and allows dataset creation/management.
+- **FormularioCargaDataset:**  UI for dataset uploads (file, API, DB).
+- **AsistenteMetadatosDataset:**  UI to define metadata.
+- **ConfiguradorAccesoPrecioDataset:**  UI to define visibility, price, and access.
+
+**`Dataset Catalog`**  
+- **CatalogoView:**  Contains FiltrosDataset and ListaResultadosDataset.
+- **FichaDetalladaDatasetView:**  Allows selecting the type of entity.Shows complete dataset details.
+
+**`Dataset Purchase Module`**  
+- **CheckoutView:**  Orchestrates the payment process.
+- **SelectorMetodoPago:**  Integrates with Stripe Elements and facilitates SINPE interaction.
+
+**`Dashboard and Data Exploration`**  
+- **DashboardView:**  Container for QuickSightEmbeddedView.
+- **QuickSightEmbeddedView:**  Embeds and manages the Amazon QuickSight session (using the Embedded SDK).
+- **PanelControlDashboard:**  Controls to save, share, and interact with QuickSight Q.
+- **MonitorConsumoDatos:**  Displays paid data usage.
+
+**`Backoffice Portal (Next.js Pages)`**  
+- UserManagementPage, KeyAdministrationPage, SystemMonitoringPage, etc., each with dedicated components.
+
+##### 4. Frontend Services (Non-Visual Logic and Communication):
+
+**`APIServiceClient` (and specializations)**  
+- **Responsibility:**  Facade for communicating with backend APIs (AppSync GraphQL/API Gateway REST). Includes interceptors to attach JWT tokens, handle common errors, and centralize API base URL.
+  
+**`AuthService` (Wrapper for AWS Amplify Auth)**  
+- **Responsibility:**  Manages authentication lifecycle (login, signup, logout, tokens) with AWS Cognito. Updates global state (StateService) on changes.
+
+**`StateService` (Implemented with React Query and Zustand)**  
+- **Responsibility:**  React Query handles server state (fetching, caching, etc.). Zustand handles global UI state (user profile, roles, preferences, global loading state) through specific stores (e.g., authStore, registroStore).
+
+**`ConfigService`**  
+- **Responsibility:** Loads and provides frontend configurations from environment variables or a configuration endpoint.
+
+**`FormValidationService` (Using Yup)**  
+- **Responsibility:** Centralizes client-side form validation logic through reusable Yup schemas.
+
+**`NotificationUIManager` (Función Lambda)**  
+- **Responsibility:** Manages display of notifications/toasts (NotificationToast) in the UI.
+
+---
+
+#### Relevant Design Patterns
+
+##### Structural Patterns
+
+- **Facade:** APIServiceClient simplifies backend calls. AuthService simplifies interaction with Amplify/Cognito. QuickSightEmbeddedView acts as a facade for the QuickSight SDK.
+- **Adapter:** Wrapper components for third-party UI libraries or to adapt the QuickSight Embedded SDK into a cohesive React component.
+- **Composite:** Complex views are built by nesting React components, forming a tree structure.
+    
+##### Behavioral Patterns
+
+- **Observer (via State Management – Zustand and React Query):**  Components subscribe to Zustand store changes or React Query results. When data changes, components update.
+- **State:** React components manage their local state. StateService (Zustand) manages global states affecting UI behavior.
+- **Strategy:** FormularioDinamicoRegistro may use strategies to render and validate different field types based on the form schema.
+- **Command:** User interactions that trigger data mutations (e.g., form submission) are handled by React Query, encapsulating execution logic, state, and retries.
+  
+---
+
+#### Key Dependencies
+
+##### Internal:
+- Between React components (nesting, composition).
+- Views/Pages depend on common components and frontend services (APIServiceClient, AuthService, StateService).
+- State management libraries (Zustand, React Query) and routing (React Router or Next.js router).
+
+##### External
+- **Backend Layer (APIs - AWS AppSync/API Gateway):**  Critical dependency for all business operations and data access. Well-defined API contracts (GraphQL/OpenAPI) are required.
+- **AWS Amplify:** Auth (for Cognito), Storage (for S3), API (for AppSync/API Gateway).
+- **Amazon QuickSight:** Through the QuickSight Embedded SDK.
+- **Stripe Elements:**  For payment UI.
+- **Protocols:**  HTTPS, GraphQL, REST, WSS (for AppSync subscriptions).
+- **NPM Libraries:**  React, Next.js, Tailwind CSS, Zustand, React Query (TanStack Query), Yup, Axios (or similar HTTP client if used outside of Amplify API), AWS SDKs.
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Arquitectura de clases, patrones y dependencias (a corregir para ser orientado a capas)
 
 ### Módulo de Registro de Entidades (Portal "bio registro verde")
