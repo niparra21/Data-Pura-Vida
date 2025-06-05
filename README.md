@@ -1365,6 +1365,116 @@ In this layer, "modules" mainly refer to the definition and structure of data st
 - **Protocols:**  The Data Layer is accessed through the specific protocols of each storage service (S3 API, DynamoDB API, SQL over TCP/IP for RDS, SPARQL/Gremlin for Neptune).
 
 
+### Layer: Third-Party Services (Integrations with External Services)
+
+#### Overview and Key Architectural Patterns
+
+The "Third-Party" layer encompasses the software components and configurations dedicated to securely, robustly, and decoupledly interacting with external services essential for the functionalities of Data Pura Vida. These integrations include payment gateways, identity or data verification APIs, and potentially other specialized services such as advanced secret management systems or external Hardware Security Modules (HSMs). The design of this layer prioritizes secure communication (encryption, authentication), comprehensive error and timeout handling, isolation to minimize the impact of third-party unavailability, and continuous monitoring of integration health.
+
+##### Identified Key Third-Party Services
+
+- **Payment Gateways:**
+    - Stripe Connect (for credit/debit cards)
+    - Costa Rica’s SINPE API (for IBAN transfers or national payments)
+    - PayPal (optional, via PayPal REST API)
+- **External Verification APIs:** Government or identity verification APIs (not specified, to be accessed via API Gateway + Lambda).
+- **External HSM (for Tripartite Custody):** As part of the tripartite custody system, a key may reside in an external HSM (or AWS CloudHSM operating in dedicated mode).
+- **Advanced Secret Management (Optional):** HashiCorp Vault.
+
+##### Key Architectural Patterns
+
+- **Anti-Corruption Layer (ACL):** An abstraction layer (via adapters) will be implemented between the Data Pura Vida domain model and the APIs/models of external services. This isolates the system from changes or quirks in external APIs.
+- **Circuit Breaker:** For critical and synchronous integrations, this pattern will be applied to prevent third-party service failures from causing cascading failures. It allows for fast failure or fallback routing if the external service fails or is unresponsive.
+- **API Gateway as Proxy/Facade to Third-Parties (Selective):**  Amazon API Gateway can be used as a secure and managed proxy to certain third-party APIs, centralizing access control, caching (if applicable), and monitoring for specific interactions.
+- **Asynchronous Communication:** For non-real-time or long-duration interactions with third-party services, asynchronous communication will be preferred (e.g., enqueueing the request in Amazon SQS to be processed by a Lambda) to improve system resilience and performance.
+
+---
+
+#### Main React Classes/Modules/Components and Their Responsibilities
+
+These modules represent the software components (mainly AWS Lambda functions) that encapsulate the interaction logic with each third-party service, acting as adapters.
+
+##### 1. Payment Gateway Integration Module (Primarily used by the "Dataset Purchase Module" in the Backend Layer):
+
+**`StripePaymentAdapter` (Lambda Function or Lambda Module)**  
+- **Responsibility:**  Encapsulates all logic for interacting with the Stripe Connect API. Handles creation of payment intents, card payment processing, subscription management (if applicable), and secure processing of Stripe webhooks for status updates.
+- **Technologies:**  AWS Lambda, Stripe official SDK.
+  
+**`SinpePaymentAdapter` (Lambda Function or Lambda Module)**  
+- **Responsibility:**  Encapsulates logic for interacting with the Costa Rica SINPE API or corresponding banking APIs for processing transfers or national payments.
+- **Technologies:**  AWS Lambda, secure HTTP libraries to interact with SINPE.
+
+**`PayPalPaymentAdapter` (Lambda Function or Lambda Module – if implemented)**  
+- **Responsibility:**  Encapsulates logic for interacting with the PayPal REST API for payment processing.
+- **Technologies:**  AWS Lambda, PayPal official SDK or HTTP libraries.
+
+**`PaymentGatewayFacade` (Module in the Backend Layer)**  
+- **Responsibility:**  hough residing in the Backend, it coordinates usage of payment adapters. Provides a unified interface to the "Dataset Purchase Module" for interacting with different gateways, selecting the appropriate one.
+
+##### 2. External Verification API Integration Module (Primarily used by the "AI-Powered Document Validation Module" in the Backend Layer):
+
+**`ExternalVerificationAPIAdapterManager` (Lambda Function or set of Lambdas)**  
+- **Responsibility:**  Encapsulates communication logic with various external APIs for data validation (e.g., identity verification, business registration check, tax number validity). Designed to be extensible to support multiple verification APIs.
+- **Technologies:**  AWS Lambda, Amazon API Gateway (can act as outgoing proxy or to expose these adapters internally). Credentials are managed via AWS Secrets Manager.
+
+##### 3. External HSM Interaction Module (for Tripartite Custody)(Primarily used by the "Central Security Component" in the Backend Layer):
+
+**`ExternalHSMCommunicationService` (Lambda Function or specialized library)**  
+- **Responsibility:**  Manages secure communication with a non-AWS CloudHSM (if used for one key in tripartite custody). This involves specific HSM protocols and authentication mechanisms. If AWS CloudHSM is used, interaction occurs via AWS APIs but requires specific VPC network configuration.
+- **Technologies:**  AWS Lambda (with VPC connectivity), vendor-provided client libraries or CloudHSM SDK.
+  
+##### 4. HashiCorp Vault Interaction Module (Optional) 
+(Primarily used by the "Central Security Component" in the Backend Layer):
+
+**`HashiCorpVaultClientAdapter` (Lambda Function or client library)**  
+- **Responsibility:**  Encapsulates interaction with a HashiCorp Vault instance for advanced secret management, if this technology is selected.
+- **Technologies:**  AWS Lambda, HTTP client for Vault or Vault SDK.
+  
+---
+
+#### Relevant Design Patterns
+
+##### Creational Patterns
+
+- **Factory Method:** `PaymentGatewayFacade` (in the backend layer) could use this pattern to create the correct payment adapter instance (StripePaymentAdapter, SinpePaymentAdapter) depending on configuration or selected payment method.
+
+##### Structural Patterns
+
+- **Adapter:** The foundational pattern of this layer. Each `XyzAdapter` converts a specific third-party API interface into a standardized interface usable by the Data Pura Vida system.
+- **Facade:** Modules like `PaymentGatewayFacade` (in the backend using these adapters) simplify interaction with the payment subsystem. An `ExternalSystemInteractionFacade` could group multiple verification adapters.
+- **Proxy:** Amazon API Gateway can act as a proxy for outgoing calls to certain third-party APIs, adding a management layer (logging, caching, basic transformation).
+
+##### Behavioral Patterns
+
+- **Strategy:** If multiple providers offer similar services (e.g., different APIs for the same type of data verification), the Strategy pattern can be used to dynamically select the provider or adapter implementation.
+- **Circuit Breaker:** Implemented within the logic of the adapters or in the Lambda functions that use them, to protect Data Pura Vida from third-party unavailability or high latency.
+- **Retry (with Exponential Backoff and Jitter):** An essential mechanism in adapters to retry calls to third-party services that may experience transient failures.
+- **Command:**  Requests to third-party services—especially asynchronous or requiring compensation—could be encapsulated as Command objects.
+- **Anti-Corruption Layer (ACL) (Architectural Principle):** The adapters are the primary manifestation of this principle, creating a barrier that isolates the Data Pura Vida core system from the specifics and models of external systems.
+  
+---
+
+#### Key Dependencies
+
+##### Internal (within the Third-Party Layer):
+- Specific adapters are generally independent from each other but should follow a consistent design.
+
+##### External
+- **Backend Layer:**  The main consumer of the services offered by this layer (via adapters).
+    - The "Dataset Purchase Module" depends on the payment gateway adapters.
+    - The "AI-Powered Document Validation Module" depends on external verification adapters.
+    - The "Central Security Component" depends on adapters for External HSM or HashiCorp Vault (if used).
+- **Third-Party Services (actual APIs and systems):** Stripe API, SINPE API, PayPal API, specific verification APIs, HSM, HashiCorp Vault.
+- **Cloud Layer (AWS Services):**
+    - AWS Lambda: Where the adapter logic resides.
+    - Amazon API Gateway: May be used as an outgoing proxy or to internally expose adapters.
+    - AWS Secrets Manager: Essential for securely storing access credentials to third-party services.
+    - Amazon SQS/SNS/EventBridge: For managing asynchronous interactions with third-party services.
+    - Amazon CloudWatch: For monitoring the health, performance, and errors of integrations.
+    - AWS KMS: To encrypt sensitive data in transit to/from third parties or temporary credentials.
+- **Protocols:**  HTTPS (mandatory for all external communications), REST, SOAP (if any third-party requires it), third-party specific data formats (JSON, XML).
+
+
 
 
 
