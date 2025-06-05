@@ -1152,107 +1152,106 @@ The following modules represent specialized Lambda functions, AppSync resolvers,
 - **ServicioConsultaFuentesExternasLambda:**  Connects to external APIs (via API Gateway) for validations.
 - **RegistroEstadoValidacionDynamoDBModule:**  Stores and updates validation process status in Amazon DynamoDB.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-##### 3. Functional Modules (Container Views and Specific Presentation Components):
-
-**`Entity Registration Module`**  
-- **RegistroView:**  Orchestrates the registration flow.
-- **TipoEntidadSelector:**  Allows selecting the type of entity.
-- **FormularioDinamicoRegistro:**  Renders forms based on JSON schemas (from backend) and entity type. Validates inputs with Yup.
-- **UploaderDocumentosRegistro:**  Manages file uploads to S3 via Amplify Storage, with previews and client-side validations.
+**`Central Security Component` (Backend Implementation)**  
+- **CognitoTriggerLambda:**  Lambda functions as AWS Cognito triggers to customize authentication flows.
+- **RekognitionBiometricServiceLambda:**  Encapsulates logic for biometric verification and liveness detection using Amazon Rekognition.
+- **KeyManagementCoordinatorLambda:**  Orchestrates key management operations for tripartite custody (with AWS KMS, AWS CloudHSM or external HSM, AWS Secrets Manager).
+- **WAFRuleManagerLambda:**  (Optional) Dynamically updates AWS WAF rules.
+- **SecurityAuditProcessingLambda:**  Processes AWS CloudTrail logs or Amazon Macie findings for alerts/security records.
 
 **`User Dataset Management Module`**  
-- **GestionDatasetsView:**  Lists and allows dataset creation/management.
-- **FormularioCargaDataset:**  UI for dataset uploads (file, API, DB).
-- **AsistenteMetadatosDataset:**  UI to define metadata.
-- **ConfiguradorAccesoPrecioDataset:**  UI to define visibility, price, and access.
+- **DatasetUploadHandlerLambda:**  Handles file uploads to S3 or configuration of external connections (credentials in AWS Secrets Manager).
+- **MetadataExtractionServiceLambda:**  Uses AWS Glue DataBrew or Amazon SageMaker to suggest metadata.
+- **DatasetConfigurationServiceLambda:**  Stores dataset configuration in Amazon DynamoDB.
+- **DatasetLifecycleManagerLambda:**  Manages temporary availability and recurring/delta uploads using Amazon EventBridge and Amazon SNS/API Gateway for callbacks.
+- **ETDLOrchestratorTriggerLambda:**  Triggers the ETDL pipeline in the Data Lake.
+- **DatasetAccessPolicyManagerLambda:**  Translates access settings into AWS Lake Formation/IAM policies.
+
+**`Core Data Lake and Backend Data Processing`**  
+- **GlueETDLJobs (PySpark/Scala in AWS Glue):**  Main ETDL logic.
+- **SageMakerProcessingPipelines:**  ML tasks integrated into ETDL (duplicate detection with SageMaker or Amazon Entity Resolution, modeling).
+- **DataLakeOrchestrationStepFunctions:**  Orchestrates Glue Jobs, SageMaker Jobs, and Lambdas in ETDL pipelines.
+- **DeltaLoadProcessorLambda:**  Processes delta loads (identified via Glue/Deequ).
+- **LakeFormationAdminServiceLambda:**  Programmatic administration of permissions in AWS Lake Formation.
 
 **`Dataset Catalog`**  
-- **CatalogoView:**  Contains FiltrosDataset and ListaResultadosDataset.
-- **FichaDetalladaDatasetView:**  Allows selecting the type of entity.Shows complete dataset details.
+- **DatasetSearchServiceLambda:**  Processes search/filters (querying AWS Glue Data Catalog via Amazon Athena and Amazon DynamoDB), applying AWS Lake Formation visibility.
+- **DatasetDetailServiceLambda:**  Retrieves combined details from Glue Data Catalog, DynamoDB, and S3.
 
 **`Dataset Purchase Module`**  
-- **CheckoutView:**  Orchestrates the payment process.
-- **SelectorMetodoPago:**  Integrates with Stripe Elements and facilitates SINPE interaction.
+- **ProcesadorPagoAPILambda:**  Initiates purchase.
+- **ServicioPasarelaPagoLambda:**  Encapsulates logic for Stripe Connect, SINPE API, and PayPal, using AWS KMS for encryption.
+- **StripeWebhookHandlerLambda:**  Validates and processes Stripe webhooks.
+- **GestorPermisosDatasetLambda:**  Assigns permissions in AWS Lake Formation or AWS IAM Identity Center after payment.
+- **RegistroTransaccionCompraDynamoDBLambda:**  Logs transactions in Amazon DynamoDB.
+- **DatasetPrivadoApprovalStepFunctions:**  (Optional) Orchestrates approvals for private datasets post-purchase.
 
-**`Dashboard and Data Exploration`**  
-- **DashboardView:**  Container for QuickSightEmbeddedView.
-- **QuickSightEmbeddedView:**  Embeds and manages the Amazon QuickSight session (using the Embedded SDK).
-- **PanelControlDashboard:**  Controls to save, share, and interact with QuickSight Q.
-- **MonitorConsumoDatos:**  Displays paid data usage.
+**`Dashboard and Data Exploration`(Backend Support)**  
+- **QuickSightEmbeddingServiceLambda:**  Generates secure URLs for embedding Amazon QuickSight, applying AWS Lake Formation permissions.
+- **ConsumoDatosTrackerServiceLambda:**  Tracks data usage (Amazon CloudWatch, Amazon DynamoDB).
+- **LimiteConsumoManagerLambda:**  Manages limit breaches (AWS WAF, AWS Lake Formation).
+- **HistorialConsumoQueryServiceLambda:**  Provides usage history (AWS CloudTrail, Amazon OpenSearch).
+- **ModeloAIDataProvisioningServiceLambda:**  Orchestrates controlled delivery of data to Amazon SageMaker models.
 
-**`Backoffice Portal (Next.js Pages)`**  
-- UserManagementPage, KeyAdministrationPage, SystemMonitoringPage, etc., each with dedicated components.
+**`Backoffice Portal`(Backend Administration Logic)**  
+- **AdminUserManagementServiceLambda:**  Manages users/entities and roles (DynamoDB/RDS, AWS IAM Identity Center).
+- **KeyAdministrationServiceLambda:**  Orchestrates key and custodian management (AWS KMS, AWS CloudHSM, AWS Step Functions).
+- **DataIntegrationRuleEngineLambda:**  Manages data load rules (DynamoDB, AWS Glue, AWS Glue DataBrew).
+- **SystemMonitoringServiceLambda:**  Exposes CloudWatch metrics.
+- **AuditLogAccessServiceLambda:**  Queries CloudTrail/OpenSearch logs.
+- **ReportingGenerationServiceLambda:**  Generates reports using Athena/QuickSight.
+- **LegalComplianceServiceLambda:**  Extracts evidence with Amazon Macie/CloudTrail, queries AWS Artifact.
+- **ObjectVisibilityControlServiceLambda:**  Manages permissions with Lake Formation/AWS Config.
 
-##### 4. Frontend Services (Non-Visual Logic and Communication):
-
-**`APIServiceClient` (and specializations)**  
-- **Responsibility:**  Facade for communicating with backend APIs (AppSync GraphQL/API Gateway REST). Includes interceptors to attach JWT tokens, handle common errors, and centralize API base URL.
-  
-**`AuthService` (Wrapper for AWS Amplify Auth)**  
-- **Responsibility:**  Manages authentication lifecycle (login, signup, logout, tokens) with AWS Cognito. Updates global state (StateService) on changes.
-
-**`StateService` (Implemented with React Query and Zustand)**  
-- **Responsibility:**  React Query handles server state (fetching, caching, etc.). Zustand handles global UI state (user profile, roles, preferences, global loading state) through specific stores (e.g., authStore, registroStore).
-
-**`ConfigService`**  
-- **Responsibility:** Loads and provides frontend configurations from environment variables or a configuration endpoint.
-
-**`FormValidationService` (Using Yup)**  
-- **Responsibility:** Centralizes client-side form validation logic through reusable Yup schemas.
-
-**`NotificationUIManager` (Función Lambda)**  
-- **Responsibility:** Manages display of notifications/toasts (NotificationToast) in the UI.
+**`Cross-cutting Notification Service`**  
+- **NotificationDispatcherLambda:**  Entry point, orchestrates sending.
+- **TemplateManagerModule (Lambda):**  Manages email templates from Amazon S3.
+- **EmailSenderServiceSESModule (Lambda):**  Uses Amazon SES to send emails.
+- **NotificationLoggerModule (Lambda):**  Logs sends (DynamoDB or CloudWatch Logs).
 
 ---
 
 #### Relevant Design Patterns
 
+##### Creational Patterns
+
+- **Factory Method:** For instantiating specific processors or clients within Lambdas (e.g., different document validators, different payment gateway clients).
+- **Builder:** For constructing complex configuration objects or service requests with multiple parameters.
+
 ##### Structural Patterns
 
-- **Facade:** APIServiceClient simplifies backend calls. AuthService simplifies interaction with Amplify/Cognito. QuickSightEmbeddedView acts as a facade for the QuickSight SDK.
-- **Adapter:** Wrapper components for third-party UI libraries or to adapt the QuickSight Embedded SDK into a cohesive React component.
-- **Composite:** Complex views are built by nesting React components, forming a tree structure.
+- **Facade:** Multiple service Lambdas act as facades to simplify interaction with underlying AWS services or complex flows. API Gateway/AppSync are the main backend facades.
+- **Adapter:** For interacting with third-party APIs (Stripe, SINPE, external validation APIs).
+- **Proxy:** API Gateway and AppSync act as proxies for Lambda functions.
+- **Decorator (via Lambda Layers or Middlewares):** To add cross-cutting concerns (logging, metrics) to Lambdas.
     
 ##### Behavioral Patterns
 
-- **Observer (via State Management – Zustand and React Query):**  Components subscribe to Zustand store changes or React Query results. When data changes, components update.
-- **State:** React components manage their local state. StateService (Zustand) manages global states affecting UI behavior.
-- **Strategy:** FormularioDinamicoRegistro may use strategies to render and validate different field types based on the form schema.
-- **Command:** User interactions that trigger data mutations (e.g., form submission) are handled by React Query, encapsulating execution logic, state, and retries.
+- **Chain of Responsibility:**  For validation or authorization flows in API Gateway/AppSync or within Lambdas.
+- **Strategy:** To select algorithms or processors at runtime (e.g., different data cleaning strategies).
+- **State (AWS Step Functions):** Core for orchestrating stateful workflows (registration, document validation, ETDL).
+- **Command:** API requests and messages in queues (SQS)/topics (SNS) are treated as commands.
+- **Observer/Event-Driven (Amazon EventBridge, SNS, S3 Events, DynamoDB Streams):**  Central pattern for asynchronous communication and decoupling.
+- **Template Method:** Lambda functions or Glue scripts define skeletons for processes, allowing step customization.
+- **Saga (AWS Step Functions):** To manage consistency in distributed transactions.
   
 ---
 
 #### Key Dependencies
 
 ##### Internal:
-- Between React components (nesting, composition).
-- Views/Pages depend on common components and frontend services (APIServiceClient, AuthService, StateService).
-- State management libraries (Zustand, React Query) and routing (React Router or Next.js router).
+- Interdependence between Lambdas (synchronous or asynchronous).
+- AppSync resolvers/API Gateway handlers depend on business logic Lambdas.
+- Step Functions orchestrate Lambdas and AWS services.
+- Dependency on configuration and policies from the Central Security Component.
 
 ##### External
-- **Backend Layer (APIs - AWS AppSync/API Gateway):**  Critical dependency for all business operations and data access. Well-defined API contracts (GraphQL/OpenAPI) are required.
-- **AWS Amplify:** Auth (for Cognito), Storage (for S3), API (for AppSync/API Gateway).
-- **Amazon QuickSight:** Through the QuickSight Embedded SDK.
-- **Stripe Elements:**  For payment UI.
-- **Protocols:**  HTTPS, GraphQL, REST, WSS (for AppSync subscriptions).
-- **NPM Libraries:**  React, Next.js, Tailwind CSS, Zustand, React Query (TanStack Query), Yup, Axios (or similar HTTP client if used outside of Amplify API), AWS SDKs.
-    
+- **Frontend Layer:**  Main consumer of APIs (AppSync/API Gateway).
+- **Data Layer:** Critical dependency for persistence, metadata querying, and storage (S3, DynamoDB, RDS, Glue Data Catalog, Lake Formation, Neptune).
+- **Cloud Layer:** All mentioned AWS services are the infrastructure foundation for backend operations.
+- **Third-Party Layer:**  For payment gateways and external verification APIs.
+- **Protocols:**  HTTPS, GraphQL, REST, JSON, event formats.
+
 
 
 
