@@ -1018,6 +1018,168 @@ The Frontend layer constitutes the user interface for all interactions with the 
 - **NPM Libraries:**  React, Next.js, Tailwind CSS, Zustand, React Query (TanStack Query), Yup, Axios (or similar HTTP client if used outside of Amplify API), AWS SDKs.
     
 
+### Layer: Backend (Including Middlewares, Handlers, and Business Logic)
+
+#### Overview and Key Architectural Patterns
+
+The Backend Layer is the operational and logical core of Data Pura Vida. It is responsible for executing all business logic, processing data, interacting with the Data Layer (persistence), managing communication with Third-Party Services, enforcing detailed business rules and security policies, and exposing robust, secure, and efficient APIs. These APIs are primarily consumed by the Frontend Layer and, potentially, by other authorized systems or services.
+
+The design is based on a serverless architecture, using AWS Lambda as the main compute platform. APIs are exposed via AWS AppSync (GraphQL) and/or Amazon API Gateway (RESTful). The orchestration of complex workflows is handled by AWS Step Functions, and asynchronous event-driven communication is implemented using Amazon EventBridge, Amazon SNS, and Amazon SQS.
+
+##### Main Technologies
+- **Serverless Compute:** AWS Lambda
+- **API Exposure:** AWS AppSync (GraphQL), Amazon API Gateway (REST)
+- **Workflow Orchestration:** AWS Step Functions
+- **Messaging and Events:** Amazon EventBridge, Amazon SNS, Amazon SQS
+- **Integration with AWS Services:** AI (SageMaker, Textract, Comprehend, Rekognition), Data (DynamoDB, S3, Glue, Athena, Lake Formation, Neptune), Security (Cognito, KMS, IAM, WAF, CloudHSM), etc.
+
+##### Key Architectural Patterns
+
+- **Serverless Architecture:** Business logic resides in AWS Lambda functions, promoting scalability and reducing operational overhead.
+- **Microservices-Oriented:** Specialized Lambda functions support a modular design with high cohesion and low coupling, facilitating independent development, deployment, and scaling.
+- **API-Driven:**  Communication is based on well-defined API interfaces (GraphQL and REST).
+- **Event-Driven Architecture (EDA):** Used for asynchronous communication, service decoupling, and response to business or system events (via EventBridge, SNS, SQS).
+- **Hexagonal Architecture (Ports and Adapters - Conceptual):** Within complex Lambdas, domain logic is isolated from external dependencies via clear interfaces (ports) and adapters, enhancing testability and flexibility.
+
+---
+
+#### Main React Classes/Modules/Components and Their Responsibilities
+
+The following modules represent specialized Lambda functions, AppSync resolvers, API Gateway configurations, and Step Functions workflows that comprise the logic of the Backend layer, grouped by the main functionalities of Data Pura Vida they serve.
+
+##### 1. API Interface Sub-layer (Backend Entry Point):
+
+**`AppSyncGraphQLService` (AWS AppSync)**  
+- **Responsibility:**  Exposes the main GraphQL API for the frontend. Defines the GraphQL schema. Integrated with AWS Cognito for authentication/authorization and invokes Lambda functions as resolvers.
+  
+**`APIGatewayRESTService` (Amazon API Gateway)**  
+- **Responsibility:**  Exposes RESTful endpoints for specific functionalities or third-party integrations. Integrated with AWS WAF, AWS Cognito, or Lambda Authorizers, and invokes Lambda functions.
+
+##### 2. Business Logic and Orchestration by Main Functionality:
+
+**`Entity Registration Module`**  
+- **RegistroRequestHandlerLambda:**  Orchestrates the backend registration flow, validates, interacts with GestorFormulariosServiceLambda, invokes document validation and persistence.
+- **GestorFormulariosServiceLambda:**  Provides structure and rules for dynamic forms (from JSON Schema in AppSync or DynamoDB).
+- **ServicioValidacionDatosEntradaLambda:**  Performs advanced business validations.
+- **ServicioPersistenciaRegistroLambda:**  Saves registration information and status in Amazon DynamoDB.
+- **OrquestadorFlujoRegistroStepFunctions:**  (Optional) Manages asynchronous registration flow, including AI validation and manual review.
+
+**`Document Validation with AI Module`**  
+- **OrquestadorValidacionDocumentoStepFunctions:**  Orchestrates the document validation pipeline.
+- **ServicioExtraccionDatosTextractLambda:**  Uses Amazon Textract for OCR and data extraction.
+- **ServicioClasificacionDocumentoComprehendSageMakerLambda:**  Uses Amazon Comprehend and/or SageMaker to classify document types.
+- **ServicioVerificacionContenidoSageMakerLambda:**  Applies business rules and SageMaker models to verify information, format, and detect inconsistencies.
+- **ServicioValidacionFirmasDigitalesKMSLambda:**  Verifies digital signatures using AWS KMS and/or AWS Signer.
+- **ServicioConsultaFuentesExternasLambda:**  Connects to external APIs (via API Gateway) for validations.
+- **RegistroEstadoValidacionDynamoDBModule:**  Stores and updates validation process status in Amazon DynamoDB.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##### 3. Functional Modules (Container Views and Specific Presentation Components):
+
+**`Entity Registration Module`**  
+- **RegistroView:**  Orchestrates the registration flow.
+- **TipoEntidadSelector:**  Allows selecting the type of entity.
+- **FormularioDinamicoRegistro:**  Renders forms based on JSON schemas (from backend) and entity type. Validates inputs with Yup.
+- **UploaderDocumentosRegistro:**  Manages file uploads to S3 via Amplify Storage, with previews and client-side validations.
+
+**`User Dataset Management Module`**  
+- **GestionDatasetsView:**  Lists and allows dataset creation/management.
+- **FormularioCargaDataset:**  UI for dataset uploads (file, API, DB).
+- **AsistenteMetadatosDataset:**  UI to define metadata.
+- **ConfiguradorAccesoPrecioDataset:**  UI to define visibility, price, and access.
+
+**`Dataset Catalog`**  
+- **CatalogoView:**  Contains FiltrosDataset and ListaResultadosDataset.
+- **FichaDetalladaDatasetView:**  Allows selecting the type of entity.Shows complete dataset details.
+
+**`Dataset Purchase Module`**  
+- **CheckoutView:**  Orchestrates the payment process.
+- **SelectorMetodoPago:**  Integrates with Stripe Elements and facilitates SINPE interaction.
+
+**`Dashboard and Data Exploration`**  
+- **DashboardView:**  Container for QuickSightEmbeddedView.
+- **QuickSightEmbeddedView:**  Embeds and manages the Amazon QuickSight session (using the Embedded SDK).
+- **PanelControlDashboard:**  Controls to save, share, and interact with QuickSight Q.
+- **MonitorConsumoDatos:**  Displays paid data usage.
+
+**`Backoffice Portal (Next.js Pages)`**  
+- UserManagementPage, KeyAdministrationPage, SystemMonitoringPage, etc., each with dedicated components.
+
+##### 4. Frontend Services (Non-Visual Logic and Communication):
+
+**`APIServiceClient` (and specializations)**  
+- **Responsibility:**  Facade for communicating with backend APIs (AppSync GraphQL/API Gateway REST). Includes interceptors to attach JWT tokens, handle common errors, and centralize API base URL.
+  
+**`AuthService` (Wrapper for AWS Amplify Auth)**  
+- **Responsibility:**  Manages authentication lifecycle (login, signup, logout, tokens) with AWS Cognito. Updates global state (StateService) on changes.
+
+**`StateService` (Implemented with React Query and Zustand)**  
+- **Responsibility:**  React Query handles server state (fetching, caching, etc.). Zustand handles global UI state (user profile, roles, preferences, global loading state) through specific stores (e.g., authStore, registroStore).
+
+**`ConfigService`**  
+- **Responsibility:** Loads and provides frontend configurations from environment variables or a configuration endpoint.
+
+**`FormValidationService` (Using Yup)**  
+- **Responsibility:** Centralizes client-side form validation logic through reusable Yup schemas.
+
+**`NotificationUIManager` (Función Lambda)**  
+- **Responsibility:** Manages display of notifications/toasts (NotificationToast) in the UI.
+
+---
+
+#### Relevant Design Patterns
+
+##### Structural Patterns
+
+- **Facade:** APIServiceClient simplifies backend calls. AuthService simplifies interaction with Amplify/Cognito. QuickSightEmbeddedView acts as a facade for the QuickSight SDK.
+- **Adapter:** Wrapper components for third-party UI libraries or to adapt the QuickSight Embedded SDK into a cohesive React component.
+- **Composite:** Complex views are built by nesting React components, forming a tree structure.
+    
+##### Behavioral Patterns
+
+- **Observer (via State Management – Zustand and React Query):**  Components subscribe to Zustand store changes or React Query results. When data changes, components update.
+- **State:** React components manage their local state. StateService (Zustand) manages global states affecting UI behavior.
+- **Strategy:** FormularioDinamicoRegistro may use strategies to render and validate different field types based on the form schema.
+- **Command:** User interactions that trigger data mutations (e.g., form submission) are handled by React Query, encapsulating execution logic, state, and retries.
+  
+---
+
+#### Key Dependencies
+
+##### Internal:
+- Between React components (nesting, composition).
+- Views/Pages depend on common components and frontend services (APIServiceClient, AuthService, StateService).
+- State management libraries (Zustand, React Query) and routing (React Router or Next.js router).
+
+##### External
+- **Backend Layer (APIs - AWS AppSync/API Gateway):**  Critical dependency for all business operations and data access. Well-defined API contracts (GraphQL/OpenAPI) are required.
+- **AWS Amplify:** Auth (for Cognito), Storage (for S3), API (for AppSync/API Gateway).
+- **Amazon QuickSight:** Through the QuickSight Embedded SDK.
+- **Stripe Elements:**  For payment UI.
+- **Protocols:**  HTTPS, GraphQL, REST, WSS (for AppSync subscriptions).
+- **NPM Libraries:**  React, Next.js, Tailwind CSS, Zustand, React Query (TanStack Query), Yup, Axios (or similar HTTP client if used outside of Amplify API), AWS SDKs.
+    
+
+
+
+
+
+
 
 
 
