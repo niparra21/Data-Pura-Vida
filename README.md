@@ -1609,10 +1609,150 @@ This section outlines the main AWS services and key aspects of their configurati
 - **SSL/TLS Certificate Providers:** AWS Certificate Manager
 
 
+### Layer: Protocols (Communication and Standards)
 
+#### Overview and Key Architectural Patterns
 
+The Protocols and Standards Layer defines the set of rules, data formats, and communication methods that govern interactions between the various components of Data Pura Vida (Frontend, Backend, Data), as well as communication with third-party services and end users. Proper definition and enforcement of this layer are crucial to ensure interoperability, security, efficiency, and clarity across all information exchanges. Adoption of industry-standard protocols is prioritized to facilitate integration, maintenance, scalability, and system evolution.
 
+##### Key Principles
 
+- **Interoperability:**  Use of widely adopted protocols and data formats to ensure seamless integration between internal components and with external systems.
+- **Security:** Strict application of secure protocols across all communications to protect data confidentiality, integrity, and authenticity.
+- **Efficiency:** Selection of protocols and formats that optimize performance and minimize overhead, particularly for high-volume or low-latency data exchanges.
+- **Standardization:** Definition and adherence to internal standards for naming conventions, error message formats, and API structures to ensure consistency and predictability across the platform.
+- **Clarity and Semantics:** Use of protocols that allow clear and precise definition of the meaning of exchanged data and the operations performed.
+
+---
+#### Main Protocols and Standards Applied
+
+The following details the key protocols and standards used in the various interactions within the Data Pura Vida system.
+
+##### 1. API Communication Protocols (Frontend <-> Backend, Service <-> Service):
+
+**HTTPS (HTTP Secure)**  
+- **Application:** Core transport protocol for all external (internet-exposed) and internal API communications conducted over HTTP.
+- **Standard:** TLS (Transport Layer Security) version 1.2 or higher. SSL/TLS certificates managed via AWS Certificate Manager (ACM).
+- **Justification:** Industry-standard for secure, encrypted web communication.
+  
+**GraphQL (via AWS AppSync))**  
+- **Application:** Primarily for communication between the Frontend Layer (React/Next.js) and the Backend Layer. Allows clients to request only the data they need, efficiently and precisely.
+- **Standard:** GraphQL Specification.
+- **Justification:** Frontend flexibility, reduction of over-fetching/under-fetching, real-time capabilities via subscriptions.
+
+**REST (Representational State Transfer) (via Amazon API Gateway)**  
+- **Application:** For specific backend APIs—especially those well-suited to CRUD models—webhooks from third parties, or integrations with systems expecting RESTful interfaces.
+- **Standard:** Uses standard HTTP methods (GET, POST, PUT, DELETE, PATCH), semantic HTTP status codes, and HATEOAS principles where applicable.
+- **Justification:** Widely adopted, well understood, with a rich tooling ecosystem.
+
+##### 2. Data Exchange Formats:
+
+**JSON (JavaScript Object Notation)**  
+- **Application:** Primary format for request/response bodies in GraphQL and REST APIs. Also used for messages in queues (SQS), topics (SNS), and events (EventBridge).
+- **Justification:** Lightweight, human-readable during development, easy to parse in most languages and platforms.
+  
+**CSV (Comma-Separated Values) and Excel (XLSX)**  
+- **Application:** Supported formats for dataset uploads by users in the "Dataset Management Module".
+- **Justification:** Common tabular data formats widely used in business and data analysis.
+
+**Apache Parquet and Apache ORC (in the Data Lake)**  
+- **Application:** Columnar storage formats optimized for large-scale data analysis within the Data Lake (Amazon S3 + Apache Iceberg). Used by AWS Glue and Amazon Athena.
+- **Justification:** High-performance analytical queries, efficient compression, schema evolution support.
+
+**Vector Formats (for AI model delivery)**  
+- **Application:** For controlled delivery of data from the "Dashboard and Data Exploration" module to AI models, optimized for machine learning platforms like Amazon SageMaker.
+- **Justification:** Efficient for ML training and inference.
+  
+##### 3. Authentication and Authorization Protocols:
+
+**OAuth 2.0 / OpenID Connect (OIDC)**  
+- **Application:** Used by AWS Cognito for identity federation and authentication of portal users.
+- **Justification:** Open, robust standards for user authentication and delegated authorization.
+  
+**JWT (JSON Web Tokens)**  
+- **Application:** Used as bearer tokens to authorize API requests (GraphQL via AppSync and REST via API Gateway) after successful authentication via Cognito.
+- **Justification:** Compact, self-contained, secure standard for transmitting identity and authorization claims between parties.
+  
+**AWS IAM Roles and Policies**  
+- **Application:** For authentication and authorization between AWS services (e.g., AWS Lambda accessing Amazon S3 or DynamoDB).
+- **Justification:** Native AWS security mechanism offering granular, essential control.
+
+**TLS (Transport Layer Security) 1.2+**  
+- **Application:** To encrypt communication channels across all HTTPS-based interactions (APIs, frontend) and sensitive network connections (e.g., RDS database access).
+- **Justification:** Essential standard for secure transport layer communication.
+  
+##### 4. Messaging and Event Protocols:
+
+**Native Protocols of AWS SNS, SQS, EventBridge**  
+- **Application:** For asynchronous, event-driven communication between microservices (Lambdas) and backend components.
+- **Standard:** AWS SDKs abstract the underlying protocols. Entry points like webhooks (SNS, EventBridge) use HTTPS. Messages are typically in JSON format.
+- **Justification:** Managed AWS services that support decoupling, resilience, and scalability for event-driven architectures.
+
+**CloudEvents (Optional Consideration for Internal Standardization)**  
+- **Application:** If a vendor-agnostic standard format is required for internal events flowing through EventBridge or SNS, the CloudEvents specification (CNCF) may be adopted to improve semantic clarity and interoperability.
+- **Justification:** Standardizes event metadata and structure.
+
+##### 5. Data Access and Storage Protocols:
+
+**Amazon S3 API (REST/HTTPS-based)**  
+- **Application:** For all programmatic interactions with Amazon S3 object storage.
+
+**Amazon DynamoDB API (HTTPS/JSON-based)**  
+- **Application:** For all programmatic interactions with Amazon DynamoDB NoSQL tables.
+
+**Relational Database Protocols (e.g., TCP/IP for PostgreSQL/MySQL)**  
+- **Application:** For Backend Layer (Lambdas in VPC) connections to Amazon RDS instances. Communication is encrypted via TLS.
+
+**Graph Database Protocols (e.g., SPARQL or Gremlin over HTTPS for Amazon Neptune)**  
+- **Application:** For interacting with Amazon Neptune graph database.
+
+##### 6. Security and Encryption Standards (Beyond TLS):
+
+**AES-256**  
+- **Application:** Symmetric encryption standard used by AWS KMS to encrypt data at rest in Amazon S3, DynamoDB, RDS, etc.
+- **Justification:** Robust, widely accepted encryption standard.
+
+**Digital Signature Standards (e.g., RSA, ECDSA managed by AWS Signer or KMS)**  
+- **Application:** For signing artifacts or messages to ensure integrity and non-repudiation, such as document or code signature verification.
+- **Justification:** Established cryptographic standards for digital signatures.
+  
+**AWS Encryption SDK**  
+- **Application:** For application-level encryption of ultra-sensitive data requiring additional control over encryption processes and key policies.
+- **Justification:** Provides a client library for implementing encryption best practices.
+
+---
+
+#### Design Considerations and Best Practices
+
+- **API Versioning:** Implement a clear versioning strategy for REST APIs (e.g., in the URL or headers) and GraphQL (via schema evolution and directives like @deprecated) to support backward compatibility.
+- **Standardized Error Handling:** Define and use consistent error response formats and appropriate HTTP status codes across all APIs to facilitate client integration and debugging.
+- **API Documentation:** Generate and maintain clear, up-to-date documentation for all exposed APIs, using tools like Swagger/OpenAPI for REST and schema introspection for GraphQL.
+- **Data Validation (Schema Validation):** Rigorously validate input and output data at multiple points (frontend, API Gateway/AppSync, business logic in Lambda) using defined formats and schemas (JSON Schema, GraphQL schemas, Yup schemas).
+- **Content Negotiation (for REST):** Where applicable and if multiple data formats are expected (though JSON will be the primary), implement content negotiation mechanisms.
+
+---
+
+#### Key Dependencies
+
+##### Frontend Layer:
+- Critically depends on HTTPS, GraphQL/REST, and JSON to communicate with the Backend Layer.
+- Uses OAuth 2.0/OIDC (via Cognito) for user authentication.
+  
+##### Backend Layer
+- Exposes APIs using HTTPS, GraphQL (AppSync), and REST (API Gateway), with JSON as the primary data format.
+- Uses AWS IAM protocols for secure service-to-service communication.
+- Interacts with the Data Layer using the specific protocols of each storage service.
+- Employs messaging protocols (SNS, SQS, EventBridge) and authentication/authorization protocols (OAuth 2.0, JWT).
+
+##### Data Layer:
+- Accessed using the specific protocols of each service (S3 API, DynamoDB API, SQL over TCP/IP for RDS, etc.).
+- Data at rest is protected using encryption standards (AES-256 via KMS).
+
+##### Third-Party Layer:
+- Communication with external services uses HTTPS and their specific API protocols (typically REST or SOAP with JSON or XML).
+  
+##### Cloud Layer:
+- Provides network infrastructure (VPCs, API Gateway, AppSync, CloudFront) and security services (KMS, ACM, IAM, Cognito) that implement and enforce the correct application of these protocols and standards.
 
 
 
