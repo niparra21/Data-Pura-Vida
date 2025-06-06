@@ -1753,3 +1753,163 @@ The following details the key protocols and standards used in the various intera
   
 ##### Cloud Layer:
 - Provides network infrastructure (VPCs, API Gateway, AppSync, CloudFront) and security services (KMS, ACM, IAM, Cognito) that implement and enforce the correct application of these protocols and standards.
+
+## Critical Services: Configuration, Monitoring, and Resilience  
+To ensure continuous availability of Data Pura Vida, the following key services incorporate robust configurations, fallback strategies, and proactive monitoring, aligned with the project's security and interoperability objectives.
+
+### 1. Identity and Access Management  
+- **AWS Cognito** is configured with **mandatory MFA** for administrative roles and federated authentication. During high load scenarios, JWT tokens are cached locally in the frontend (via **Amplify**) to reduce service dependency.  
+  - *Monitoring*:  
+    - **CloudWatch** alarms for authentication error rates >5%.  
+    - **AWS WAF** blocks brute force attempts (rules based on Costa Rican IPs).  
+  - *Fallback*:  
+    - Emergency endpoints in **API Gateway** with temporary IAM authorization if Cognito fails.  
+
+### 2. Data Pipeline (ETDL)  
+- **AWS Glue** and **SageMaker** execute transformation workflows with **Apache Iceberg** on S3 to ensure ACID. Glue jobs include automatic retries and **SNS** notifications for failures.  
+  - *Monitoring*:  
+    - Execution metrics in **CloudWatch** (duration, processed records).  
+    - **Amazon Macie** scans sensitive data during processing.  
+  - *Fallback*:  
+    - Raw data is redirected to an S3 "quarantine" bucket for manual reprocessing.  
+    - **Athena** rebuilds catalog metadata if Glue Data Catalog fails.  
+
+### 3. Business APIs  
+- **AppSync (GraphQL)** and **API Gateway** implement:  
+  - *Throttling* (1000 RPM per user) and query caching (TTL 5 min).  
+  - JWT authorization validated by **Cognito** + **IAM Identity Center** for RBAC.  
+  - *Monitoring*:  
+    - **X-Ray** traces Lambda resolver latency.  
+    - **CloudWatch** alarms for 5xx responses.  
+  - *Fallback*:  
+    - Idempotent mutations are queued in **SQS** for reprocessing.  
+    - **CloudFront** serves cached responses for public catalog if Lambda fails.  
+
+### 4. Payment Processing  
+- **Stripe Connect** and **SINPE API** are integrated via Lambdas with:  
+  - **Circuit Breaker** (3 consecutive failures disable provider for 10 min).  
+  - Double verification with **DynamoDB Streams** before applying changes.  
+  - *Monitoring*:  
+    - **Athena** audits daily transaction logs.  
+    - **CloudWatch** alarms for >5% failure rates in 1 hour.  
+  - *Fallback*:  
+    - "Transfer-only" mode manually activated from **Backoffice (Next.js)**.  
+    - **SES/Pinpoint** notifies administrators for reconciliation.  
+
+### 5. Operational Storage  
+- **DynamoDB** uses:  
+  - Auto-scaling based on **CloudWatch Metrics**.  
+  - **PITR (Point-in-Time Recovery)** for data restoration.  
+  - *Fallback*:  
+    - **Global Tables** replicate data to another AWS region.  
+- **RDS (PostgreSQL)** for Backoffice:  
+  - Multi-AZ read replicas.  
+  - Daily KMS-encrypted snapshots.  
+
+### 6. Events and Notifications  
+- **EventBridge** orchestrates business events (e.g., document validation) with:  
+  - **DLQ (Dead Letter Queues)** in **SQS** for failed events.  
+  - *Monitoring*:  
+    - **SNS** delivery success rate (<95% triggers alarms).  
+    - **OpenSearch** analyzes **CloudTrail** logs for auditing. 
+
+  
+### Key Configuration Summary  
+| **Service**    | **Resilience**                  | **Monitoring**                |
+| -------------- | ------------------------------- | ----------------------------- |
+| Cognito        | Local cache + IAM fallback      | CloudWatch + WAF              |
+| Data Lake (S3) | Quarantine bucket + Athena      | S3 Storage Lens + Macie       |
+| AppSync        | Caching + SQS for mutations     | X-Ray + CloudWatch Alarms     |
+| Stripe/SINPE   | Circuit Breaker + transfer mode | Athena + CloudWatch Metrics   |
+| DynamoDB       | Global Tables + PITR            | DynamoDB Streams + CloudWatch |
+| EventBridge    | SQS                             | OpenSearch + CloudTrail       |
+
+  
+# Versions / License / Restrictions of Frameworks, SDKs, Languages and other Project Tools
+## Frameworks
+| Category       | Component             | Version/Configuration | Remarks                                           | License / Restrictions                                       |
+| -------------- | --------------------- | --------------------- | ------------------------------------------------- | ------------------------------------------------------------ |
+| **Frontend**   | React.js              | 18.2.0                | Strict Mode + Concurrent Renderer.                | MIT License (Permissive Open Source)                         |
+|                | Next.js               | 14.1.4                | App Router + Server Actions.                      | MIT License (Permissive Open Source)                         |
+|                | AWS Amplify           | v12.10.1              | Auth with Cognito (MFA mandatory).                | Proprietary (AWS) – Free Tier available, usage-based pricing |
+|                | Yup                   | 1.2.0                 | Dynamic form validation.                          | MIT License                                                  |
+| **Backend**    | Node.js               | 20.11.1 (LTS)         | ES Modules + Native Fetch API.                    | MIT License                                                  |
+|                | AWS AppSync           | API 2023-11-30        | Lambda Resolvers with VTL.                        | Proprietary (AWS) – Usage-based pricing                      |
+|                | API Gateway (REST)    | v2                    | Throttling: 1000 RPS.                             | Proprietary (AWS) – Usage-based pricing                      |
+|                | Express.js            | 4.18.2                | Only for internal endpoints.                      | MIT License                                                  |
+| **Databases**  | DynamoDB              | API 2023-10-0         | Tables with LSI/GSI + DAX caching.                | Proprietary (AWS) – Free Tier available                      |
+|                | PostgreSQL (RDS)      | 15.5                  | Instance db.m6g.xlarge.                           | PostgreSQL License (Permissive Open Source)                  |
+|                | AWS Glue Data Catalog | 4.0                   | Daily crawlers + Python Shell.                    | Proprietary (AWS) – Usage-based pricing                      |
+| **DataLake**   | Apache Iceberg        | 1.4.0                 | Support for time-travel queries.                  | Apache License 2.0 (Permissive Open Source)                  |
+|                | AWS Lake Formation    | N/A                   | RLS (Row-Level Security) permissions.             | Proprietary (AWS)                                            |
+| **AI/ML**      | Amazon SageMaker      | PyTorch 2.1.0         | ml.m5.xlarge instances for training.              | Proprietary (AWS) + PyTorch under BSD-style license          |
+|                | Textract              | API 2023-11-30        | Limit: 10 pages per document.                     | Proprietary (AWS) – Usage-based pricing                      |
+|                | Comprehend            | API 2023-11-30        | Entity detection in Spanish.                      | Proprietary (AWS) – Usage-based pricing                      |
+| **Dashboards** | Amazon QuickSight     | Embed SDK 2023-11-27  | "Screen-Only" mode (no downloads).                | Proprietary (AWS) – Usage-based pricing                      |
+| **Security**   | AWS KMS               | API 2023-11-0         | Key rotation every 90 days + third-party custody. | Proprietary (AWS)                                            |
+|                | Cognito               | N/A                   | MFA: OTP + Rekognition (liveness check).          | Proprietary (AWS) – Usage-based pricing                      |
+|                | OpenSSL               | 3.2.1                 | TLS 1.3 mandatory.                                | Apache-style License (permissive)                            |
+|                | AWS WAF               | N/A                   | Geo-Restrict Rules (only IPs from Costa Rica).    | Proprietary (AWS)                                            |
+| **DevOps**     | Terraform             | 1.6.0                 | State backend on S3 with locking.                 | Mozilla Public License 2.0                                   |
+|                | GitHub Actions        | N/A                   | Self-hosted runners on EC2 (c6g.xlarge).          | MIT License (subject to GitHub Terms of Service)             |
+| **Payments**   | Stripe SDK            | 12.0.0                | Integration with cards + SINPE.                   | MIT License (but bound by Stripe’s API usage policies)       |
+| **Monitoring** | CloudWatch            | N/A                   | Alarms for errors >5% in APIs.                    | Proprietary (AWS)                                            |
+|                | X-Ray                 | N/A                   | Distributed tracing.                              | Proprietary (AWS)                                            |
+  
+ ## SDKs
+| Category       | Official SDK / API            | Required Version | Stack Compatibility Check    | Primary Use Case                         | License / Restrictions      |
+| -------------- | ----------------------------- | ---------------- | ---------------------------- | ---------------------------------------- | --------------------------- |
+| **Frontend**   | AWS Amplify JS SDK            | v6.x+            | React 18 + Next.js 14        | Auth (Cognito), Storage, APIs            | AWS Proprietary             |
+|                | Stripe JS SDK                 | v12.0.0          | Validated (CORS + Webhooks)  | Payments (Cards + SINPE)                 | MIT (bound by Stripe’s TOS) |
+| **Backend**    | AWS SDK for JavaScript (v3)   | v3.470.0+        | Node.js 20 LTS               | AppSync, DynamoDB, KMS, S3               | Apache-2.0                  |
+|                | Express.js SDK                | v4.18.2          | Native Integration           | Internal API Endpoints                   | MIT                         |
+| **AI / ML**    | SageMaker Python SDK          | v2.21.1+         | PyTorch 2.1.0                | Model Training (Custom Docs Validation)  | Apache-2.0 + BSD (PyTorch)  |
+|                | AWS Textract / Comprehend SDK | API 2023-11-30   | SDK v3                       | Document Processing + Entity Detection   | AWS Proprietary             |
+|                | AWS Rekognition SDK           | API 2023-11-30   | Cognito MFA + Liveness Check | Facial Recognition, Biometrics           | AWS Proprietary             |
+| **Data**       | DynamoDB Document Client      | v3.470.0+        | API 2023-10-0                | NoSQL Operations                         | AWS Proprietary             |
+|                | PostgreSQL Driver (`pg`)      | v8.11+           | PostgreSQL 15.5              | RDS Access from Node.js                  | MIT                         |
+|                | Apache Iceberg (Python)       | v1.4.0           | Glue 4.0 + Athena            | Time-Travel Queries (DataLake)           | Apache-2.0                  |
+| **Security**   | AWS Cognito SDK               | v3.470.0+        | Amplify v12                  | MFA (OTP + Rekognition)                  | AWS Proprietary             |
+|                | OpenSSL (Node.js Binding)     | v3.2.1           | TLS 1.3 (Enforced)           | Encryption / Decryption                  | Dual OpenSSL / SSLeay       |
+|                | AWS Encryption SDK            | v3.0+            | KMS + Lambda                 | Client-Side Encryption (Ultra-Sensitive) | Apache-2.0                  |
+| **DevOps**     | Terraform AWS Provider        | ≥v5.0            | Terraform 1.6.0              | AWS Resource Provisioning                | MPL-2.0                     |
+|                | GitHub Actions Toolkit        | Latest Stable    | Self-Hosted EC2 Runners      | CI/CD Pipelines                          | MIT                         |
+|                | HashiCorp Vault API           | v1.15+           | KMS + Secrets Manager        | Tripartite Key Custody (HSM Integration) | MPL-2.0                     |
+| **Monitoring** | AWS X-Ray SDK for Node.js     | v3.4.0+          | Node.js 20                   | Distributed Tracing                      | AWS Proprietary             |
+| **Payments**   | SINPE API Client (Costa Rica) | N/A (REST)       | Lambda Integration           | Bank Transfers (Costa Rica)              | Service                     |
+  
+## Languages
+  
+| Category           | Language / Runtime  | Required Version | Stack Compatibility Check       | Primary Use Case                       | License / Restrictions           |
+| ------------------ | ------------------- | ---------------- | ------------------------------- | -------------------------------------- | -------------------------------- |
+| **Backend**        | Node.js             | 20.11.1 (LTS)    | Full (ESM, AWS SDK v3, Express) | API Gateway/AppSync Resolvers, Lambdas | MIT                              |
+| **Backend (ML)**   | Python              | 3.11.7           | SageMaker PyTorch 2.1 + Boto3   | AI/ML Training, Glue ETL Jobs          | PSF (Python Software Foundation) |
+| **Frontend**       | JavaScript (ES2022) | ES13 (2022)      | React 18 + Next.js 14           | Dynamic UI, Amplify Integrations       | ECMA International               |
+| **Frontend**       | TypeScript          | 5.3.3            | Next.js 14 App Router           | Type-Safe Components, SDK Wrappers     | Apache-2.0                       |
+| **Infrastructure** | HCL (Terraform)     | 1.6.0            | AWS Provider ≥5.0               | IaC (AppSync, DynamoDB, KMS)           | MPL-2.0                          |
+| **Query (SQL)**    | SQL (PostgreSQL)    | ANSI SQL:2016    | PostgreSQL 15.5 (RDS)           | Complex Joins, RLS Policies            | PostgreSQL License               |
+| **Query (NoSQL)**  | PartiQL             | AWS 2023-10-0    | DynamoDB API 2023               | Document/JSON Queries                  | AWS Proprietary                  |
+| **Data Lake**      | PyIceberg DSL       | 1.4.0            | Glue 4.0 + Athena               | Time-Travel, Schema Evolution          | Apache-2.0                       |
+| **Security**       | OpenSSL Config      | 3.2.1            | TLS 1.3 (Node.js/Python)        | Encryption, Certificates               | Apache-style License             |
+  
+## Project Tools
+  
+| Category        | Tool                       | Version / Configuration  | Compatibility Check          | Primary Use Case                              | License / Restrictions      |
+| --------------- | -------------------------- | ------------------------ | ---------------------------- | --------------------------------------------- | --------------------------- |
+| **Development** | AWS Amplify Studio         | v12.10.1                 | React 18 + AppSync           | Dynamic form generation                       | AWS Proprietary             |
+|                 | AWS Cloud9 (IDE)           | Node.js 20 + Python 3.11 | Lambda, SageMaker            | Rapid serverless development                  | AWS Proprietary (Free Tier) |
+| **AI/ML**       | SageMaker Studio Lab       | PyTorch 2.1.0            | Textract/Comprehend          | Model experimentation for document validation | AWS Proprietary             |
+|                 | JupyterLab (SageMaker)     | 3.6+                     | Glue ETL + Iceberg           | Data analysis notebooks                       | BSD                         |
+| **Security**    | AWS IAM Access Analyzer    | N/A                      | Cognito + KMS                | Permission auditing                           | AWS Proprietary             |
+|                 | AWS Certificate Manager    | TLS 1.3                  | API Gateway + AppSync        | SSL certificate management                    | AWS Proprietary             |
+| **Data Lake**   | AWS Glue DataBrew          | 2.0+                     | Iceberg 1.4.0                | Visual data cleansing                         | AWS Proprietary             |
+|                 | Athena Query Engine        | ANSI SQL:2016            | Lake Formation RLS           | SQL querying over S3                          | AWS Proprietary             |
+| **Monitoring**  | AWS X-Ray SDK              | 3.4.0+                   | Lambda + AppSync             | Distributed tracing                           | AWS Proprietary             |
+|                 | CloudWatch Logs Insights   | N/A                      | DynamoDB Streams             | Real-time log analysis                        | AWS Proprietary             |
+| **CI/CD**       | AWS CodePipeline           | N/A                      | GitHub Actions (EC2 runners) | Multi-stage deployment                        | AWS Proprietary             |
+|                 | AWS SAM CLI                | 1.100.0+                 | Lambda + API Gateway         | Serverless packaging and deployment           | Apache-2.0                  |
+| **Backoffice**  | AWS App Runner             | N/A                      | Next.js 14                   | Admin panel deployment (autoscaling)          | AWS Proprietary             |
+|                 | AWS Step Functions         | SDK 2.22.0               | Document validation          | Manual workflow orchestration                 | AWS Proprietary             |
+| **Payments**    | Stripe CLI                 | 12.0.0                   | Lambda Webhooks              | Local payment testing                         | MIT                         |
+| **Testing**     | Postman (AWS Integrations) | 10.18+                   | AppSync + REST APIs          | Secure endpoint testing                       | Proprietary (Freemium)      |
+|                 | AWS Lambda Test Runners    | Node.js 20 + Python 3.11 | Jest + PyTest                | Serverless unit testing                       | MIT                         |
