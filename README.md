@@ -769,34 +769,30 @@ This comprehensive decomposition, visually represented in the linked diagrams an
 - **AWS Cognito**: User authentication, MFA (SMS/TOTP), and group management.
 - **Amazon Rekognition**: Biometric validation (facial recognition, liveness check).
 - **AWS IAM Identity Center**: RBAC (role and permission management).
-- **AWS WAF + Lambda@Edge**: Geographic restriction (Costa Rica IPs only) and attack protection.
+- **AWS WAF**: Geographic restriction (Costa Rica IPs only) and attack protection.
 
 ### Document Validation
 - **Amazon Textract**: Data extraction from documents (IDs, certificates, etc.).
-- **Amazon Comprehend**: Document classification by type.
 - **SageMaker**: Custom models for format validation, readability, and consistency.
 - **DynamoDB**: Storage of validation records and statuses (pending/approved).
 
 ### Advanced Security
 - **AWS KMS**: Cryptographic key generation and rotation (symmetric/asymmetric).
-- **Secrets Manager + CloudHSM**: Tripartite key custody (KMS + external HSM + organization).
-- **HashiCorp Vault (optional)**: Centralized secret management.
+- **Secrets Manager**: Tripartite key custody (KMS + external HSM + organization).
 
 ## 2. Data Management (DataLake)
 ### Storage & Processing
 - **Amazon S3**: Primary storage for datasets (structured/semi-structured).
-- **AWS Glue**: Automated ETL, data cataloging, and schema detection.
-- **Apache Iceberg**: Versioning and delta loads management.
+- **AWS Glue**: Automated ETL, data cataloging, and schema detection, Versioning and delta loads management (Apache Iceberg).
 - **Amazon Athena**: SQL queries on S3 data.
 
 ### Quality & Transformation
 - **AWS Glue DataBrew**: Data cleaning and normalization with AI.
 - **SageMaker**: Advanced modeling, deduplication, and data enrichment.
-- **Amazon Deequ**: Quality validation (integrity, format).
+- **Amazon Glue**: Quality validation (integrity, format).
 
 ### Security & Governance
 - **AWS Lake Formation**: Access control (RLS/Row-Level Security) and auditing.
-- **Amazon Macie**: Sensitive data protection (automatic detection).
 - **KMS + TLS**: Encryption at rest/in transit.
 
 ## 3. Visualization & Dashboards
@@ -804,12 +800,12 @@ This comprehensive decomposition, visually represented in the linked diagrams an
   - AI-powered dashboard generation (QuickSight Q).
   - Embedded visualization (Embedding SDK).
   - Export restrictions (download blocking).
-- **Athena + Glue**: Data preview in "sample" mode.
+- **Glue**: Data preview in "sample" mode.
 
 ## 4. Monetization & Dataset Purchases
 - **Stripe Connect + SINPE API**: Payment processing (cards, transfers).
 - **DynamoDB**: Transaction records and associated permissions.
-- **SES/Pinpoint**: Post-purchase notifications (email/SMS).
+- **SES**: Post-purchase notifications (email/SMS).
 
 ## 5. Backend & API
 - **AWS AppSync**: Secure GraphQL API (JWT/MFA validation).
@@ -858,7 +854,7 @@ This comprehensive decomposition, visually represented in the linked diagrams an
 | Discovery     | - Data Pura Vida website<br>- Social media                  | - Looks for the registration process<br>- Reads opinions                  | *"Will this be complicated?"*<br>*"What documents do I need?"*                          | Provide step-by-step guide before registration   |
 | Consideration | - Registration portal<br>- FAQ                              | - Compares with other open data systems (in our case there are none)<br>- Checks legal requirements     | *"Is this worth?"*<br>*"Will my data be secure?"*                            | AWS Lex chatbot for queries                      |
 | Registration  | - Web form (React + Amplify)<br>- Document upload           | - Completes company info<br>- Uploads legal ID and authorization documents | *"I hope they don't ask for too many papers."*<br>*"Why is validation taking so long?"* | Real-time progress bar with Lambda + EventBridge |
-| Validation    | - SES notification<br>- Human backoffice review (if needed) | - Waits for approval<br>- Receives confirmation email                      | *"Why was I rejected?"* (if error)<br>*"Finally!"* (if successful)                      | Add SMS notifications via Pinpoint               |
+| Validation    | - SES notification<br>- Human backoffice review (if needed) | - Waits for approval<br>- Receives confirmation email                      | *"Why was I rejected?"* (if error)<br>*"Finally!"* (if successful)                      | Add SMS notifications via SES               |
 | First Use     | - QuickSight dashboard<br>- Dataset catalog                 | - Explores public data<br>- Configures team permissions                    | *"How do I filter what I need?"*<br>*"Visualization is so easy!"*                       | Interactive tutorial on first login              |
 
 ![Imagen del Customer Journey #1](./CustomerJourney1.png)
@@ -888,9 +884,9 @@ This comprehensive decomposition, visually represented in the linked diagrams an
 #### Customer profile:
   - ministery of finance functionary
   - The key technologies in this case are:
-    - AWS Glue + Deequ (data quality validation)
+    - AWS Glue (data quality validation)
     - S3 + Iceberg (versioned storage)
-    - Macie + CloudTrail (security and auditing)
+    - CloudTrail (security and auditing)
 
 ### Journey Phases
 | Phase       | Touchpoints                                                   | Customer Actions                                               | Emotions/Thoughts                                                                     | Improvement Opportunities                |
@@ -986,7 +982,7 @@ The Frontend layer constitutes the user interface for all interactions with the 
     - Server data handling and complex global state: React Query (TanStack Query) will be used for server data fetching, caching, synchronization, and updating. Zustand will be used for managing shared UI global state between unrelated components due to its simplicity and efficiency.
 - **API-Driven:** All communication with business logic and data will be routed through a well-defined API service layer in the frontend, interacting with AWS AppSync (GraphQL) and/or Amazon API Gateway (REST).
 - **Responsive Design:** Responsive design principles will be applied via Tailwind CSS for optimal experience across different devices.
-- **Progressive Web App (PWA):** Future Consideration: PWA features such as service workers and push notifications (potentially with Amazon Pinpoint) may be incorporated to enhance the user experience.
+- **Progressive Web App (PWA):** Future Consideration: PWA features such as service workers and push notifications (potentially with Amazon SES) may be incorporated to enhance the user experience.
   
 ---
 
@@ -1110,7 +1106,7 @@ The design is based on a serverless architecture, using AWS Lambda as the main c
 - **API Exposure:** AWS AppSync (GraphQL), Amazon API Gateway (REST)
 - **Workflow Orchestration:** AWS Step Functions
 - **Messaging and Events:** Amazon EventBridge, Amazon SNS, Amazon SQS
-- **Integration with AWS Services:** AI (SageMaker, Textract, Comprehend, Rekognition), Data (DynamoDB, S3, Glue, Athena, Lake Formation, Neptune), Security (Cognito, KMS, IAM, WAF, CloudHSM), etc.
+- **Integration with AWS Services:** AI (SageMaker, Textract, Rekognition), Data (DynamoDB, S3, Glue, Athena, Lake Formation, Neptune), Security (Cognito, KMS, IAM, WAF), etc.
 
 ##### Key Architectural Patterns
 
@@ -1146,7 +1142,7 @@ The following modules represent specialized Lambda functions, AppSync resolvers,
 **`Document Validation with AI Module`**  
 - **OrquestadorValidacionDocumentoStepFunctions:**  Orchestrates the document validation pipeline.
 - **ServicioExtraccionDatosTextractLambda:**  Uses Amazon Textract for OCR and data extraction.
-- **ServicioClasificacionDocumentoComprehendSageMakerLambda:**  Uses Amazon Comprehend and/or SageMaker to classify document types.
+- **ServicioClasificacionDocumentoComprehendSageMakerLambda:**  Uses SageMaker to classify document types.
 - **ServicioVerificacionContenidoSageMakerLambda:**  Applies business rules and SageMaker models to verify information, format, and detect inconsistencies.
 - **ServicioValidacionFirmasDigitalesKMSLambda:**  Verifies digital signatures using AWS KMS and/or AWS Signer.
 - **ServicioConsultaFuentesExternasLambda:**  Connects to external APIs (via API Gateway) for validations.
@@ -1155,9 +1151,9 @@ The following modules represent specialized Lambda functions, AppSync resolvers,
 **`Central Security Component` (Backend Implementation)**  
 - **CognitoTriggerLambda:**  Lambda functions as AWS Cognito triggers to customize authentication flows.
 - **RekognitionBiometricServiceLambda:**  Encapsulates logic for biometric verification and liveness detection using Amazon Rekognition.
-- **KeyManagementCoordinatorLambda:**  Orchestrates key management operations for tripartite custody (with AWS KMS, AWS CloudHSM or external HSM, AWS Secrets Manager).
+- **KeyManagementCoordinatorLambda:**  Orchestrates key management operations for tripartite custody (with AWS KMS, external HSM, AWS Secrets Manager).
 - **WAFRuleManagerLambda:**  (Optional) Dynamically updates AWS WAF rules.
-- **SecurityAuditProcessingLambda:**  Processes AWS CloudTrail logs or Amazon Macie findings for alerts/security records.
+- **SecurityAuditProcessingLambda:**  Processes AWS CloudTrail logs findings for alerts/security records.
 
 **`User Dataset Management Module`**  
 - **DatasetUploadHandlerLambda:**  Handles file uploads to S3 or configuration of external connections (credentials in AWS Secrets Manager).
@@ -1171,7 +1167,7 @@ The following modules represent specialized Lambda functions, AppSync resolvers,
 - **GlueETDLJobs (PySpark/Scala in AWS Glue):**  Main ETDL logic.
 - **SageMakerProcessingPipelines:**  ML tasks integrated into ETDL (duplicate detection with SageMaker or Amazon Entity Resolution, modeling).
 - **DataLakeOrchestrationStepFunctions:**  Orchestrates Glue Jobs, SageMaker Jobs, and Lambdas in ETDL pipelines.
-- **DeltaLoadProcessorLambda:**  Processes delta loads (identified via Glue/Deequ).
+- **DeltaLoadProcessorLambda:**  Processes delta loads (identified via Glue).
 - **LakeFormationAdminServiceLambda:**  Programmatic administration of permissions in AWS Lake Formation.
 
 **`Dataset Catalog`**  
@@ -1195,13 +1191,13 @@ The following modules represent specialized Lambda functions, AppSync resolvers,
 
 **`Backoffice Portal`(Backend Administration Logic)**  
 - **AdminUserManagementServiceLambda:**  Manages users/entities and roles (DynamoDB/RDS, AWS IAM Identity Center).
-- **KeyAdministrationServiceLambda:**  Orchestrates key and custodian management (AWS KMS, AWS CloudHSM, AWS Step Functions).
+- **KeyAdministrationServiceLambda:**  Orchestrates key and custodian management (AWS KMS, AWS Step Functions).
 - **DataIntegrationRuleEngineLambda:**  Manages data load rules (DynamoDB, AWS Glue, AWS Glue DataBrew).
 - **SystemMonitoringServiceLambda:**  Exposes CloudWatch metrics.
 - **AuditLogAccessServiceLambda:**  Queries CloudTrail/OpenSearch logs.
-- **ReportingGenerationServiceLambda:**  Generates reports using Athena/QuickSight.
-- **LegalComplianceServiceLambda:**  Extracts evidence with Amazon Macie/CloudTrail, queries AWS Artifact.
-- **ObjectVisibilityControlServiceLambda:**  Manages permissions with Lake Formation/AWS Config.
+- **ReportingGenerationServiceLambda:**  Generates reports using QuickSight.
+- **LegalComplianceServiceLambda:**  Extracts evidence with Amazon CloudTrail, queries AWS Artifact.
+- **ObjectVisibilityControlServiceLambda:**  Manages permissions with Lake Formation.
 
 **`Cross-cutting Notification Service`**  
 - **NotificationDispatcherLambda:**  Entry point, orchestrates sending.
@@ -1259,7 +1255,7 @@ The following modules represent specialized Lambda functions, AppSync resolvers,
 The Data Layer is responsible for the physical persistence, secure and organized storage, cataloging, and governance of all information assets within the Data Pura Vida ecosystem. This spans from raw ingested data, to processed and transformed data in the Data Lake, to technical and business metadata, system configuration data, audit logs, and transactional data generated by platform operations. The storage strategy is based on the selective use of AWS services, optimized for different data types, access patterns, and performance requirements, with a strong emphasis on security, scalability, efficiency, and centralized governance.
 
 ##### Main Technologies
-- **Data Lake Storage:** Amazon S3, Apache Iceberg (as a table format over S3)
+- **Data Lake Storage:** Amazon S3, Glue (Apache Iceberg) as a table format over S3
 - **Metadata Catalog:** AWS Glue Data Catalog
 - **NoSQL Databases:** Amazon DynamoDB
 - **Relational Databases:** Amazon RDS (PostgreSQL or MySQL)
@@ -1270,7 +1266,7 @@ The Data Layer is responsible for the physical persistence, secure and organized
 
 ##### Key Architectural Patterns
 
-- **Data Lake Architecture:** Amazon S3 is used as the central repository for storing large volumes of data in various formats (raw, processed, curated). Apache Iceberg is implemented over S3 to provide transactional table features (ACID), data and schema versioning, and efficient delta management.
+- **Data Lake Architecture:** Amazon S3 is used as the central repository for storing large volumes of data in various formats (raw, processed, curated). Glue (Apache Iceberg) is implemented over S3 to provide transactional table features (ACID), data and schema versioning, and efficient delta management.
 - **Polyglot Persistence:** Multiple database technologies are used, each optimized for different data types and access patterns (DynamoDB for transactional NoSQL, RDS for relational data, Neptune for graphs, S3/Iceberg for the data lake).
 - **Metadata-Driven Data Management:**  Heavy reliance on the AWS Glue Data Catalog to register, discover, and manage technical metadata of datasets stored in the Data Lake and other cataloged sources. Business and enriched metadata are additionally managed in DynamoDB or S3.
 - **Security by Design:** All data storage is encrypted at rest using AWS KMS. Fine-grained access control is managed through AWS IAM and AWS Lake Formation.
@@ -1281,13 +1277,13 @@ The Data Layer is responsible for the physical persistence, secure and organized
 
 In this layer, "modules" mainly refer to the definition and structure of data storages, their schemas, and the AWS services managing them.
 
-##### 1. Data Lake Storage (Amazon S3 + Apache Iceberg):
+##### 1. Data Lake Storage (Amazon S3 + Glue (Apache Iceberg)):
 
 **`S3BucketsDataLake` (Amazon S3 Configuration)**  
 - **Responsibility:**  Define the S3 bucket structure for the different zones of the Data Lake: Raw/Ingest Zone, Processed/Intermediate Zone, Curated/Modeled Zone.
 - **Configuration:**  Bucket policies, encryption (SSE-S3 or SSE-KMS), access logging, object versioning, lifecycle policies.
   
-**`IcebergTables` (Apache Iceberg Definitions over S3)**  
+**`IcebergTables` (Glue with Apache Iceberg Definitions over S3)**  
 - **Responsibility:**  Define tables over S3 data using the Apache Iceberg format. Includes table schema, partitioning strategies, and Iceberg metadata management for versioning, schema evolution, and ACID transactions.
 
 ##### 2. Metadata Catalog (AWS Glue Data Catalog):
@@ -1296,7 +1292,7 @@ In this layer, "modules" mainly refer to the definition and structure of data st
 - **Responsibility:**  Logical container for metadata tables describing datasets in the Data Lake.
 
 **`GlueTables` (Definitions in AWS Glue Data Catalog)**  
-- **Responsibility:**  Store technical metadata for each dataset (schema, data types, S3 location, format, partitions, statistics). Populated by Glue crawlers or dataset registration processes. It is the source for Athena, Glue ETDL, SageMaker, and Lake Formation.
+- **Responsibility:**  Store technical metadata for each dataset (schema, data types, S3 location, format, partitions, statistics). Populated by Glue crawlers or dataset registration processes. It is the source for Glue ETDL, SageMaker, and Lake Formation.
 
 ##### 3. Operational and Application Databases (Amazon DynamoDB, Amazon RDS):
 
@@ -1304,7 +1300,7 @@ In this layer, "modules" mainly refer to the definition and structure of data st
 - **Responsibility:**  Store entity information during the registration process before final approval (status, form data).
 
 **`DocumentValidationTable` (Amazon DynamoDB)**  
-- **Responsibility:**  Store status and results of document validation (document ID, AI status, Textract/Comprehend results, manual review comments).
+- **Responsibility:**  Store status and results of document validation (document ID, AI status, Textract results, manual review comments).
 
 **`DatasetConfigurationTable` (Amazon DynamoDB)**  
 - **Responsibility:**  Store user-defined configuration for each shared dataset (name, description, type, pricing model, access rules, etc.).
@@ -1339,7 +1335,7 @@ In this layer, "modules" mainly refer to the definition and structure of data st
 #### Relevant Design Patterns
 
 - **Polyglot Persistence (Architectural):** Use of multiple data storage technologies optimized for their purpose.
-- **Data Lake (Architectural):** Use of S3 as a central storage, enhanced with table formats like Apache Iceberg.
+- **Data Lake (Architectural):** Use of S3 as a central storage, enhanced with table formats like Glue (Apache Iceberg).
 - **Metadata Catalog (Architectural):** Centralized data definition using AWS Glue Data Catalog.
 - **Repository/DAO (Implemented in Backend Layer):** The Backend Layer will use this pattern to abstract access logic to the different data sources defined in this Data Layer.
 - **Data Mapper (Implemented in Backend Layer):** To map business logic objects to database structures.
@@ -1378,8 +1374,7 @@ The "Third-Party" layer encompasses the software components and configurations d
     - Costa Rica’s SINPE API (for IBAN transfers or national payments)
     - PayPal (optional, via PayPal REST API)
 - **External Verification APIs:** Government or identity verification APIs (not specified, to be accessed via API Gateway + Lambda).
-- **External HSM (for Tripartite Custody):** As part of the tripartite custody system, a key may reside in an external HSM (or AWS CloudHSM operating in dedicated mode).
-- **Advanced Secret Management (Optional):** HashiCorp Vault.
+- **External HSM (for Tripartite Custody):** As part of the tripartite custody system, a key may reside in an external HSM.
 
 ##### Key Architectural Patterns
 
@@ -1420,14 +1415,11 @@ These modules represent the software components (mainly AWS Lambda functions) th
 ##### 3. External HSM Interaction Module (for Tripartite Custody)(Primarily used by the "Central Security Component" in the Backend Layer):
 
 **`ExternalHSMCommunicationService` (Lambda Function or specialized library)**  
-- **Responsibility:**  Manages secure communication with a non-AWS CloudHSM (if used for one key in tripartite custody). This involves specific HSM protocols and authentication mechanisms. If AWS CloudHSM is used, interaction occurs via AWS APIs but requires specific VPC network configuration.
-- **Technologies:**  AWS Lambda (with VPC connectivity), vendor-provided client libraries or CloudHSM SDK.
-  
-##### 4. HashiCorp Vault Interaction Module (Optional) 
-(Primarily used by the "Central Security Component" in the Backend Layer):
+- **Responsibility:**  Manages secure communication with SecretsManager (if used for one key in tripartite custody). This involves specific HSM protocols and authentication mechanisms.
+- **Technologies:**  AWS Lambda (with VPC connectivity), vendor-provided client libraries.
 
 **`HashiCorpVaultClientAdapter` (Lambda Function or client library)**  
-- **Responsibility:**  Encapsulates interaction with a HashiCorp Vault instance for advanced secret management, if this technology is selected.
+- **Responsibility:**  Encapsulates interaction with a SecretsManager Vault instance for advanced secret management, if this technology is selected.
 - **Technologies:**  AWS Lambda, HTTP client for Vault or Vault SDK.
   
 ---
@@ -1463,8 +1455,8 @@ These modules represent the software components (mainly AWS Lambda functions) th
 - **Backend Layer:**  The main consumer of the services offered by this layer (via adapters).
     - The "Dataset Purchase Module" depends on the payment gateway adapters.
     - The "AI-Powered Document Validation Module" depends on external verification adapters.
-    - The "Central Security Component" depends on adapters for External HSM or HashiCorp Vault (if used).
-- **Third-Party Services (actual APIs and systems):** Stripe API, SINPE API, PayPal API, specific verification APIs, HSM, HashiCorp Vault.
+    - The "Central Security Component" depends on adapters for External HSM
+- **Third-Party Services (actual APIs and systems):** Stripe API, SINPE API, PayPal API, specific verification APIs, HSM.
 - **Cloud Layer (AWS Services):**
     - AWS Lambda: Where the adapter logic resides.
     - Amazon API Gateway: May be used as an outgoing proxy or to internally expose adapters.
@@ -1510,7 +1502,7 @@ This section outlines the main AWS services and key aspects of their configurati
 
 **`Amazon CloudFront` **  
 - **Responsibility:**  Content Delivery Network (CDN) to globally distribute the frontend (React/Next.js) and APIs with low latency and high performance.
-- **Configuration:**  Origins (S3, ALBs, API Gateway), cache behaviors, SSL/TLS certificates (via AWS Certificate Manager - ACM), WAF integration, and optionally Lambda@Edge for edge logic.
+- **Configuration:**  Origins (S3, ALBs, API Gateway), cache behaviors, SSL/TLS certificates (via AWS Certificate Manager - ACM), WAF integration.
 
 **`AWS PrivateLink` **  
 - **Responsibility:**  Provide private connectivity between VPCs and AWS or third-party hosted services without exposing traffic to the public internet.
@@ -1531,11 +1523,10 @@ This section outlines the main AWS services and key aspects of their configurati
 ##### 3. Storage (See Data Layer for data structure details):
 
 **Amazon S3:**  Primary storage for the Data Lake, documents, templates, backups, and frontend hosting. Configured with versioning, encryption (SSE-KMS), lifecycle policies, and logging.
-**Apache Iceberg (on S3):**  Table format for the Data Lake, managed by engines like Glue and Athena.
+**Apache Iceberg, via Glue(on S3):**  Table format for the Data Lake, managed by engines like Glue and Athena.
 **Amazon DynamoDB:**  Managed NoSQL database for transactional application data.
 **Amazon RDS:**  Managed relational database (PostgreSQL, MySQL) for Backoffice data or others requiring relational structure. Configured with Multi-AZ and encryption.
-**Amazon Neptune:**  Managed graph database service for relationships between datasets.
-  
+
 ##### 4. Application Integration and Orchestration:
 
 **Amazon EventBridge:**  Serverless event bus to connect applications and trigger workflows.
@@ -1551,14 +1542,13 @@ This section outlines the main AWS services and key aspects of their configurati
 ##### 6. AI/ML Services (Platform):
 
 **Amazon SageMaker:**  Platform for training, deploying, and monitoring ML models.
-**Pretrained AI Services:**  Amazon Textract (OCR), Amazon Comprehend (NLP), Amazon Rekognition (image/video/biometrics), Amazon Entity Resolution (record matching). Their availability and base configuration are part of the cloud layer.
+**Pretrained AI Services:**  Amazon Textract (OCR), Amazon Rekognition (image/video/biometrics), Amazon Entity Resolution (record matching). Their availability and base configuration are part of the cloud layer.
 
 ##### 7. Analytics and Business Intelligence (Platform):
 
 **AWS Glue (ETL, DataBrew):**  For data preparation and transformation.
 **Amazon Athena:**  For interactive SQL queries over the Data Lake.
 **Amazon QuickSight (including Q and Embedded):**  For data visualization and BI.
-**Amazon Macie:**  For sensitive data discovery and protection.
 
 ##### 8. Infrastructure Security and Identity Management:
 
@@ -1566,7 +1556,6 @@ This section outlines the main AWS services and key aspects of their configurati
 **AWS Cognito:**  For managing end-user identities on portals (authentication, MFA, federation).
 **AWS KMS:**  Centralized key management for encryption.
 **AWS Secrets Manager:**  Secure storage of secrets.
-**AWS CloudHSM:**  (Optional/Specific) Hardware security modules for tripartite custody.
 **AWS WAF:**  Web Application Firewall for protecting web apps and APIs.
 **AWS Config:**  To evaluate, audit, and record resource configurations.
 **AWS Artifact:**  Access to AWS compliance reports.
@@ -1656,7 +1645,7 @@ The following details the key protocols and standards used in the various intera
 - **Justification:** Common tabular data formats widely used in business and data analysis.
 
 **Apache Parquet and Apache ORC (in the Data Lake)**  
-- **Application:** Columnar storage formats optimized for large-scale data analysis within the Data Lake (Amazon S3 + Apache Iceberg). Used by AWS Glue and Amazon Athena.
+- **Application:** Columnar storage formats optimized for large-scale data analysis within the Data Lake (Amazon S3 + Apache Iceberg via glue). Used by AWS Glue and Amazon Athena.
 - **Justification:** High-performance analytical queries, efficient compression, schema evolution support.
 
 **Vector Formats (for AI model delivery)**  
@@ -1766,10 +1755,9 @@ To ensure continuous availability of Data Pura Vida, the following key services 
     - Emergency endpoints in **API Gateway** with temporary IAM authorization if Cognito fails.  
 
 ### 2. Data Pipeline (ETDL)  
-- **AWS Glue** and **SageMaker** execute transformation workflows with **Apache Iceberg** on S3 to ensure ACID. Glue jobs include automatic retries and **SNS** notifications for failures.  
+- **AWS Glue** and **SageMaker** execute transformation workflows with **AWS Glue** on S3 to ensure ACID. Glue jobs include automatic retries and **SNS** notifications for failures.  
   - *Monitoring*:  
     - Execution metrics in **CloudWatch** (duration, processed records).  
-    - **Amazon Macie** scans sensitive data during processing.  
   - *Fallback*:  
     - Raw data is redirected to an S3 "quarantine" bucket for manual reprocessing.  
     - **Athena** rebuilds catalog metadata if Glue Data Catalog fails.  
@@ -1794,7 +1782,7 @@ To ensure continuous availability of Data Pura Vida, the following key services 
     - **CloudWatch** alarms for >5% failure rates in 1 hour.  
   - *Fallback*:  
     - "Transfer-only" mode manually activated from **Backoffice (Next.js)**.  
-    - **SES/Pinpoint** notifies administrators for reconciliation.  
+    - **SES** notifies administrators for reconciliation.  
 
 ### 5. Operational Storage  
 - **DynamoDB** uses:  
@@ -1818,7 +1806,7 @@ To ensure continuous availability of Data Pura Vida, the following key services 
 | **Service**    | **Resilience**                  | **Monitoring**                |
 | -------------- | ------------------------------- | ----------------------------- |
 | Cognito        | Local cache + IAM fallback      | CloudWatch + WAF              |
-| Data Lake (S3) | Quarantine bucket + Athena      | S3 Storage Lens + Macie       |
+| Data Lake (S3) | Quarantine bucket + Athena      | S3 Storage Lens               |
 | AppSync        | Caching + SQS for mutations     | X-Ray + CloudWatch Alarms     |
 | Stripe/SINPE   | Circuit Breaker + transfer mode | Athena + CloudWatch Metrics   |
 | DynamoDB       | Global Tables + PITR            | DynamoDB Streams + CloudWatch |
@@ -1840,11 +1828,10 @@ To ensure continuous availability of Data Pura Vida, the following key services 
 | **Databases**  | DynamoDB              | API 2023-10-0         | Tables with LSI/GSI + DAX caching.                | Proprietary (AWS) – Free Tier available                      |
 |                | PostgreSQL (RDS)      | 15.5                  | Instance db.m6g.xlarge.                           | PostgreSQL License (Permissive Open Source)                  |
 |                | AWS Glue Data Catalog | 4.0                   | Daily crawlers + Python Shell.                    | Proprietary (AWS) – Usage-based pricing                      |
-| **DataLake**   | Apache Iceberg        | 1.4.0                 | Support for time-travel queries.                  | Apache License 2.0 (Permissive Open Source)                  |
+| **DataLake**   | Glue(Apache Iceberg)  | 1.4.0                 | Support for time-travel queries.                  | Apache License 2.0 (Permissive Open Source)                  |
 |                | AWS Lake Formation    | N/A                   | RLS (Row-Level Security) permissions.             | Proprietary (AWS)                                            |
 | **AI/ML**      | Amazon SageMaker      | PyTorch 2.1.0         | ml.m5.xlarge instances for training.              | Proprietary (AWS) + PyTorch under BSD-style license          |
 |                | Textract              | API 2023-11-30        | Limit: 10 pages per document.                     | Proprietary (AWS) – Usage-based pricing                      |
-|                | Comprehend            | API 2023-11-30        | Entity detection in Spanish.                      | Proprietary (AWS) – Usage-based pricing                      |
 | **Dashboards** | Amazon QuickSight     | Embed SDK 2023-11-27  | "Screen-Only" mode (no downloads).                | Proprietary (AWS) – Usage-based pricing                      |
 | **Security**   | AWS KMS               | API 2023-11-0         | Key rotation every 90 days + third-party custody. | Proprietary (AWS)                                            |
 |                | Cognito               | N/A                   | MFA: OTP + Rekognition (liveness check).          | Proprietary (AWS) – Usage-based pricing                      |
@@ -1864,7 +1851,7 @@ To ensure continuous availability of Data Pura Vida, the following key services 
 | **Backend**    | AWS SDK for JavaScript (v3)   | v3.470.0+        | Node.js 20 LTS               | AppSync, DynamoDB, KMS, S3               | Apache-2.0                  |
 |                | Express.js SDK                | v4.18.2          | Native Integration           | Internal API Endpoints                   | MIT                         |
 | **AI / ML**    | SageMaker Python SDK          | v2.21.1+         | PyTorch 2.1.0                | Model Training (Custom Docs Validation)  | Apache-2.0 + BSD (PyTorch)  |
-|                | AWS Textract / Comprehend SDK | API 2023-11-30   | SDK v3                       | Document Processing + Entity Detection   | AWS Proprietary             |
+|                | AWS Textract SDK              | API 2023-11-30   | SDK v3                       | Document Processing + Entity Detection   | AWS Proprietary             |
 |                | AWS Rekognition SDK           | API 2023-11-30   | Cognito MFA + Liveness Check | Facial Recognition, Biometrics           | AWS Proprietary             |
 | **Data**       | DynamoDB Document Client      | v3.470.0+        | API 2023-10-0                | NoSQL Operations                         | AWS Proprietary             |
 |                | PostgreSQL Driver (`pg`)      | v8.11+           | PostgreSQL 15.5              | RDS Access from Node.js                  | MIT                         |
@@ -1874,7 +1861,6 @@ To ensure continuous availability of Data Pura Vida, the following key services 
 |                | AWS Encryption SDK            | v3.0+            | KMS + Lambda                 | Client-Side Encryption (Ultra-Sensitive) | Apache-2.0                  |
 | **DevOps**     | Terraform AWS Provider        | ≥v5.0            | Terraform 1.6.0              | AWS Resource Provisioning                | MPL-2.0                     |
 |                | GitHub Actions Toolkit        | Latest Stable    | Self-Hosted EC2 Runners      | CI/CD Pipelines                          | MIT                         |
-|                | HashiCorp Vault API           | v1.15+           | KMS + Secrets Manager        | Tripartite Key Custody (HSM Integration) | MPL-2.0                     |
 | **Monitoring** | AWS X-Ray SDK for Node.js     | v3.4.0+          | Node.js 20                   | Distributed Tracing                      | AWS Proprietary             |
 | **Payments**   | SINPE API Client (Costa Rica) | N/A (REST)       | Lambda Integration           | Bank Transfers (Costa Rica)              | Service                     |
   
@@ -1898,7 +1884,7 @@ To ensure continuous availability of Data Pura Vida, the following key services 
 | --------------- | -------------------------- | ------------------------ | ---------------------------- | --------------------------------------------- | --------------------------- |
 | **Development** | AWS Amplify Studio         | v12.10.1                 | React 18 + AppSync           | Dynamic form generation                       | AWS Proprietary             |
 |                 | AWS Cloud9 (IDE)           | Node.js 20 + Python 3.11 | Lambda, SageMaker            | Rapid serverless development                  | AWS Proprietary (Free Tier) |
-| **AI/ML**       | SageMaker Studio Lab       | PyTorch 2.1.0            | Textract/Comprehend          | Model experimentation for document validation | AWS Proprietary             |
+| **AI/ML**       | SageMaker Studio Lab       | PyTorch 2.1.0            | Textract                     | Model experimentation for document validation | AWS Proprietary             |
 |                 | JupyterLab (SageMaker)     | 3.6+                     | Glue ETL + Iceberg           | Data analysis notebooks                       | BSD                         |
 | **Security**    | AWS IAM Access Analyzer    | N/A                      | Cognito + KMS                | Permission auditing                           | AWS Proprietary             |
 |                 | AWS Certificate Manager    | TLS 1.3                  | API Gateway + AppSync        | SSL certificate management                    | AWS Proprietary             |
