@@ -111,9 +111,216 @@ To transform Costa Rica into a leading digital-first nation, fostering a soverei
 | **F02** | Low      | - Offer free sample datasets                                                                                          |
 | **C02** | Low      | - Require column descriptions when uploading data                                                                     |
 | **C03** | Low      | - Use relationship fields between datasets                                                                            |
-| **S05** | Low      | - Maintain access logs for extended periods                                                                                                                                                                                                      |
+| **S05** | Low      | - Maintain access logs for extended periods                                                                                                                                                                                                      
+---
+
+## Strategic Milestones
+
+- These milestones represent the key progress markers for the implementation team. Each one corresponds to a functional and verifiable deliverable, aligned with the architecture and technologies described in the project.
 
 ---
+
+### Milestone 1: Operational Base Environment  
+**Target Date:** End of Week 1  
+**Expected Outcome:**
+- AWS accounts, roles, and service access fully configured.
+- Initial CI/CD running via GitHub Actions.
+- Repositories cloned with local dev environment running on Lambda.
+- IAM roles and policies defined for the dev environment.
+---
+
+### Milestone 2: Identity and Security Functional (Auth + WAF)  
+**Target Date:** Week 4  
+**Expected Outcome:**
+- `AuthService` and `CognitoProvider` fully integrated (login, MFA, user creation).
+- Biometric verification operational using `RekognitionAdapter`.
+- Active endpoint protection with AWS WAF and `IPWhitelistFilter`.
+---
+
+### Milestone 3: Functional Modular Backend (MVP Backend)  
+**Target Date:** Week 7  
+**Expected Outcome:**
+- SOLID architecture in place: `handlers/`, `use_cases/`, `services/`, `infra/`.
+- Decoupled repositories (`IUserRepository`, `IDatasetRepository`) running on DynamoDB/S3.
+- First full business flow implemented: registration -> verification -> storage.
+- Core unit tests (`UserRegistrationHandlerTest`) running in CI/CD pipeline.
+---
+
+### Milestone 4: Functional Web Portals (UI MVP)  
+**Target Date:** Week 9  
+**Expected Outcome:**
+- "Green data" submission portal connected to backend, with validation enabled.
+- Admin backoffice with basic monitoring for users and datasets.
+- Adaptive forms by entity type, with MFA and liveness checks.
+- React/Next.js configured with secure routing, and reusable modular components.
+---
+
+### Milestone 5: ETDL Engine Operational  
+**Target Date:** Week 13  
+**Expected Outcome:**
+- `DatasetETDLProcessor` implemented with all phases (extract, transform, model, load).
+- Auto-triggered execution via S3 event.
+- Automated data quality validation (metadata, format, fields).
+- Structured logging to CloudWatch with traceable error paths per dataset.
+---
+
+### Milestone 6: Observability and Metrics Ready  
+**Target Date:** Week 15  
+**Expected Outcome:**
+- Metrics and logs from backend services and ETDL tasks centralized in CloudWatch.
+- Dashboards available for monitoring usage and system health.
+- Alerts for critical errors, security events, or data processing failures.
+- Real-time monitoring for API usage and active sessions.
+---
+
+### Milestone 7: DevSecOps Finalized + Production Ready  
+**Target Date:** Week 16  
+**Expected Outcome:**
+- Static and dynamic analysis (SAST/DAST) automated in every push.
+- Dependency scanning enabled via Dependabot.
+- Full testing coverage: unit, integration, and contract tests.
+- Infrastructure and build artifacts ready for production deployment.
+---
+
+## Final Milestone: Client Approval and Handover  
+**Target Date:** Week 17 (buffer for stakeholder validation)  
+**Expected Outcome:**
+- All deliverables verified against acceptance criteria.
+- Deployment and operations manual delivered.
+- End-to-end demo of every module with real use cases.
+- Secure handover of credentials, documentation, and environment access.
+---
+
+# Product Roadmap
+
+![Imagen del Product roadmap](./ProductRoadmap.jpg)
+
+
+# Implementation Team Structure – Data Pura Vida
+This team structure is designed to cover the full lifecycle of the project, based on the proposed roadmap and architectural needs. Each role is aligned with specific milestones, AWS services, and modules defined in the system.
+
+---
+
+## Core Technical Team
+
+### 2 × **Cloud & DevOps Engineers**
+**Primary Responsibilities:**
+- Set up and manage AWS environments (IAM, Lambda, API Gateway, Cognito, Secrets Manager, WAF).
+- Configure CI/CD pipelines with GitHub Actions.
+- Infrastructure-as-Code (IaC) setup using Terraform or AWS CDK.
+- Logging and observability with CloudWatch and AWS Config.
+
+**Key Milestones:**  
+M1 (Environment Setup), M5 (ETDL), M6 (Monitoring), M7 (DevSecOps)
+
+---
+
+### 2 × **Backend Developers**
+**Primary Responsibilities:**
+- Implement core logic using modular architecture (handlers, use cases, services).
+- Design and develop services like `AuthService`, `DatasetETDLProcessor`, `PaymentGatewayFacade`, `RekognitionAdapter`, etc.
+- Ensure compliance with SOLID principles and Clean Code.
+- Build integration with AWS (DynamoDB, S3, Rekognition, SES).
+
+**Key Milestones:**  
+M2 (Auth & Security), M3 (Modular Backend), M5 (ETDL)
+
+---
+
+### 2 × **Frontend Developers (React / Next.js)**
+**Primary Responsibilities:**
+- Develop the data submission portal and admin backoffice using React + Tailwind + TypeScript.
+- Implement MFA, biometric capture, and adaptive forms.
+- Integrate with backend APIs securely and with token management.
+- Apply strict CSP, routing guards, and reusable UI components.
+
+**Key Milestones:**  
+M4 (Portals), M6 (Monitoring), M7 (UI Testing)
+
+---
+
+### 1 × **ETDL / Data Engineer**
+**Primary Responsibilities:**
+- Build and optimize `DatasetETDLProcessor` pipeline (extract, transform, model, load).
+- Set up automated validations (format, metadata, permissions).
+- Handle S3 triggers, orchestration (ECS, Lambda) and monitoring of tasks.
+
+**Key Milestones:**  
+M5 (ETDL), M6 (Observability)
+
+---
+
+## UX / Functional Team
+
+### 2 × **UX/UI Designers**
+**Primary Responsibilities:**
+- Design user flows and interfaces for the data submission process and backoffice.
+- Create mockups, adaptive form logic, and verification flows (biometrics, MFA).
+- Ensure accessibility, mobile-responsiveness, and UX compliance.
+- Collaborate with frontend team to maintain consistency.
+
+**Key Milestones:**  
+M2 (Identity UX), M4 (Portals), M8 (Final Handover)
+
+---
+
+### 1 × **Product Owner / Functional Analyst**
+**Primary Responsibilities:**
+- Maintain alignment with stakeholders and manage scope creep.
+- Translate business logic into backlog-ready tasks.
+- Define acceptance criteria and validate each milestone.
+- Facilitate demos, sprint reviews, and handover preparation.
+
+**Key Milestones:**  
+Across all milestones, particularly M1, M4, M8
+
+---
+
+## QA & Security
+
+### 1 × **QA Engineer**
+**Primary Responsibilities:**
+- Write and execute test cases (unit, integration, E2E).
+- Set up testing pipelines in CI/CD: Jest, Pytest, Postman/Newman, etc.
+- Ensure coverage for AuthService, Dataset handling, front portals.
+- Conduct regression and smoke testing before releases.
+
+**Key Milestones:**  
+M3, M4, M6, M7
+
+---
+
+### 1 × **Security Analyst / DevSecOps**
+**Primary Responsibilities:**
+- Integrate and monitor SAST/DAST tools (SonarQube, OWASP ZAP, etc).
+- Review IAM roles, API permissions, and secure configuration of AWS services.
+- Ensure encryption, MFA, key management and secret storage follow best practices.
+- Collaborate with DevOps on secure deployment flows.
+
+**Key Milestones:**  
+M2 (Security), M6 (Monitoring), M7 (DevSecOps)
+
+---
+
+## Summary Table
+
+| Role                     | Headcount |
+| ------------------------ | --------- |
+| Cloud & DevOps Engineers | 2         |
+| Backend Developers       | 2         |
+| Frontend Developers      | 2         |
+| ETDL / Data Engineer     | 1         |
+| UX/UI Designers          | 2         |
+| Product Owner / Analyst  | 1         |
+| QA Engineer              | 1         |
+| Security / DevSecOps     | 1         |
+| **Total**                | **12**    |
+
+---
+Roles can be distributed in squads or sprints. For early phases (M1–M3), focus is backend-heavy. Mid-project (M4–M6) shifts to frontend + data, while the final phase (M7–M8) emphasizes QA, DevSecOps, and handover.
+
+
+
 
 ## Technical Policies for the **Data Pura Vida** Platform
 
@@ -1818,7 +2025,61 @@ To ensure continuous availability of Data Pura Vida, the following key services 
 | DynamoDB       | Global Tables + PITR            | DynamoDB Streams + CloudWatch |
 | EventBridge    | SQS                             | OpenSearch + CloudTrail       |
 
-  
+# Modern and Secure coding practices
+The Pura Vida Data uses solid principles to ensure a secure, scalable, and mantainable platform. Principles such as OWASP, SOLID, Clean Code and Twelve-Factor App are deeply
+integrated on different services, classes and layers and used technologies, from backend API and the ETDL flow to the management portals, using AWS as the base infraestructure. 
+
+## OWASP
+security is implemented from the design, applying different active strategies to avoid tipical vulnerabilities such as adecuate access control, or inyections
+
+**Implemented via key classes and services like:**
+  - `AuthService`, `CognitoProvider`: Manage authentication through Amazon Cognito (user pools, MFA via SMS/TOTP)
+  - `DocumentVerifier`, `RekognitionAdapter`: Handle biometric validation and liveness checks via Amazon Rekognition
+  - `SessionManager`, `IPWhitelistFilter`: Enforce geo-restriction and endpoint protection (e.g., CR-only access) via AWS WAF
+  - `EncryptionManager`, `KeyCustodyService`: Implement encryption at rest (AES-256) and in transit (TLS 1.3) using AWS KMS and Secrets Manager
+
+**Applicable in:**
+- API endpoints related to authentication, data management, and user actions
+- Identity validation workflows with biometric and MFA integration
+- Dynamic forms in the Green Registration Portal and the backoffice
+- Dataset access controls and real time document validation using AI
+---
+
+## SOLID Principles and Clean Code
+We apply clean and modular architecture to maximize maintainability and extensibility.
+
+**Implemented through:**
+- Single-responsibility handlers like `UserRegistrationHandler`, `PurchaseProcessor`, `DatasetETDLProcessor`, `DashboardBuilder`.
+- Interface-based design using `IUserRepository`, `IDatasetRepository` with flexible backends (DynamoDB, S3).
+- Design patterns such as:
+  - Factory Method: `PaymentGatewayFacade`
+  - Adapter: `SinpeAdapter`, `StripeAdapter`
+  - Strategy, Proxy, Circuit Breaker for integration services
+- Clear naming conventions, complexity controls, and DRY principles.
+
+**Applicable in:**
+- Backend architecture structured in layers (`handlers/`, `usecases/`, `services/`, `infra/`).
+- ETDL pipeline (`extract.py`, `clean.py`, `model.py`, `load.py`) ensuring encapsulated, testable steps.
+- Frontend and backoffice apps with modular design, strong typing (TypeScript), and reusable components.
+---
+
+## Twelve-Factor App
+We adopt cloud native and scalable design principles to ensure portability, resilience, and traceability.
+
+**Implemented with:**
+
+- Component-specific codebases: `api/`, `backend/`, `etdl/`, `backoffice/`
+- Configuration via environment variables, securely managed in AWS Parameter Store and Secrets Manager.
+- Dependencies defined via `requirements.txt`, `package.json`, `Dockerfile`, etc.
+- Stateless containers orchestrated via AWS Lambda, and AppSync.
+- Centralized logging via CloudWatch for observability and auditing.
+
+**Applicable in:**
+- Deployments using AWS services (API Gateway for routing, Lambda for serverless tasks).
+- Automated workflows (ETDL, AI validation, notifications).
+- Monitoring and alerting through dashboards integrated with the backoffice platform.
+---
+
 # Versions / License / Restrictions of Frameworks, SDKs, Languages and other Project Tools
 ## Frameworks
 | Category       | Component             | Version/Configuration | Remarks                                           | License / Restrictions                                       |
