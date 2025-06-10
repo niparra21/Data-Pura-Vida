@@ -2198,16 +2198,25 @@ The automation of document validation is a pillar of the "bio registro verde" re
 The PoC implemented a simplified serverless pipeline using the following components from our technology stack:
 - **API Gateway**: An API named TeamOneApiGateway was configured with a RESTful endpoint:
     - Endpoint: POST /users/analizar-documento
+
 ![Api Gateway](assets/POC_Images/POC_01.png)
+
 - **Compute**: An **AWS Lambda** function named ValidarDocumentoSimplePoC was created with the **Python** runtime to orchestrate the analysis.
     - Code: File named ValidarDocumentoSimplePoC.py
+
 ![AWS Lambda function](assets/POC_Images/POC_05.png)
+
 - **Data Storage**: An **Amazon S3** bucket (poc-documentos-datapv-danielo) was used to store the test images.
+
 ![Amazon S3 bucket](assets/POC_Images/POC_06.png)
+
 - **Artificial Intelligence**: The Amazon Textract service was used to perform the text extraction (OCR).
 - **Security**: An **AWS IAM** role was created to grant the necessary permissions for the Lambda function to access S3 and Textract.
+
 ![AWS IAM role](assets/POC_Images/POC_07.png)
+
 - **Observability**: **Amazon CloudWatch** was used for real-time logging of the execution and its results.
+
 ![Amazon CloudWatch](assets/POC_Images/POC_08.png)
 
 ### 4. Execution Methodology
@@ -2217,20 +2226,28 @@ The process was divided into preparing the test data and executing the analysis 
     - ImagenDePruebaAtras.jpg: A clear image of the back of the identity card.
     - ImagenDePruebaPobre.jpg: A stress-test image taken under poor conditions (angled, inconsistent lighting, shadows).
 - **Phase 2: API Call Simulation** Using **Postman**, three separate POST requests were sent to the TeamOneApiGateway endpoint. Each request contained a JSON body specifying one of the test images. For example:
+
 ```json
 {
   "bucketName": "poc-documentos-datapv-danielo",
   "documentName": "ImagenDePruebaPobre.jpg"
 }
 ```
+
 - **Phase 3: Verification** The execution of the ValidarDocumentoSimplePoC Lambda was monitored via Amazon CloudWatch Logs. For each Postman request, the corresponding log stream was inspected to analyze the JSON output containing the text extracted by Amazon Textract.
 ### 5. Results & Findings
 The PoC execution was successful across all three test cases, validating the hypothesis.
 - **Test Case 1 (ImagenDePrueba.jpg)**: Textract demonstrated high accuracy in extracting all visible text fields from the front of the identity card. Character recognition was precise with minimal to no errors.
+
 ![Test Case 1](assets/POC_Images/POC_02.png)
+
 - **Test Case 2 (ImagenDePruebaAtras.jpg)**: The service successfully extracted text from the back of the card, including smaller font sizes, demonstrating its versatility.
+
 ![Test Case 2](assets/POC_Images/POC_03.png)
+
 - **Test Case 3 (ImagenDePruebaPobre.jpg)**: Despite the challenging conditions of the image, Textract showed remarkable resilience, successfully extracting a significant portion of the critical text. While some minor errors were observed, key identifiers remained largely legible.
+
 ![Test Case 3](assets/POC_Images/POC_04.png)
+
 ### 6. Conclusion & Next Steps
 **Conclusion:** The PoC is considered a resounding success. It has been demonstrated that the proposed serverless architecture (API Gateway -> Lambda -> Textract) is effective and that **Amazon Textract** is a viable and sufficiently accurate technology for the document data extraction needs of the Data Pura Vida project, even under sub-optimal image conditions.
