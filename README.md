@@ -2166,3 +2166,88 @@ We adopt cloud native and scalable design principles to ensure portability, resi
 | **Payments**    | Stripe CLI                 | 12.0.0                   | Lambda Webhooks              | Local payment testing                         | MIT                         |
 | **Testing**     | Postman (AWS Integrations) | 10.18+                   | AppSync + REST APIs          | Secure endpoint testing                       | Proprietary (Freemium)      |
 |                 | AWS Lambda Test Runners    | Node.js 20 + Python 3.11 | Jest + PyTest                | Serverless unit testing                       | MIT                         |
+
+## Proof of Concept (PoCs)
+### Introduction and Strategy
+As part of the comprehensive design for the Data Pura Vida system and in fulfillment of the project's design attributes, a Proof of Concept (PoC) phase has been conducted. The purpose of these PoCs is not to develop functional prototypes, but rather to perform focused technical experiments to validate key assumptions and mitigate the most significant risks before full-scale implementation.
+
+Following a risk mitigation strategy and the course guidelines, the areas with the greatest technical complexity and uncertainty were prioritized. The focus was centered on two fundamental pillars of the architecture: document processing with Artificial Intelligence and the Data Lake structure.
+
+Each PoC report below is structured to clearly present:
+
+- The Objective and Key Question to be answered.
+- The Justification and the technical risk being mitigated.
+- The Architecture & Implemented Technologies.
+- The Execution Methodology of the test.
+- The Results & Evidence obtained.
+- The Conclusion and Recommended Next Steps based on the findings.
+
+This approach ensures that our design decisions are not only theoretically sound but are also empirically validated in a practical environment.
+
+### PoC 1: AI Document Data Extraction Viability
+#### 1. Objective and Key Questions to Answer
+The objective of this Proof of Concept (PoC) was to validate the proposed AI architecture, confirming its technical feasibility, functionality, and accuracy for the Data Pura Vida use cases.
+
+The key question to be answered was:
+- **Extraction Accuracy**: Is the capability of **Amazon Textract** to perform OCR on a Costa Rican identity document precise enough to be useful in an automated workflow, even under non-ideal image conditions?
+
+#### 2. Justification / Risk Mitigated
+The automation of document validation is a pillar of the "bio registro verde" registration module. This PoC was crucial for mitigating the fundamental technical risk that the selected AI technology might not be compatible or sufficiently accurate with specific Costa Rican documents. It validated that the base technology is robust, avoiding a costly redesign of the onboarding flow that would otherwise depend on increased manual intervention.
+
+#### 3. Architecture & Implemented Technologies 
+The PoC implemented a simplified serverless pipeline using the following components from our technology stack:
+- **API Gateway**: An API named TeamOneApiGateway was configured with a RESTful endpoint:
+    - Endpoint: POST /users/analizar-documento
+
+![Api Gateway](assets/POC_Images/POC_01.png)
+
+- **Compute**: An **AWS Lambda** function named ValidarDocumentoSimplePoC was created with the **Python** runtime to orchestrate the analysis.
+    - Code: File named ValidarDocumentoSimplePoC.py
+
+![AWS Lambda function](assets/POC_Images/POC_05.png)
+
+- **Data Storage**: An **Amazon S3** bucket (poc-documentos-datapv-danielo) was used to store the test images.
+
+![Amazon S3 bucket](assets/POC_Images/POC_06.png)
+
+- **Artificial Intelligence**: The Amazon Textract service was used to perform the text extraction (OCR).
+- **Security**: An **AWS IAM** role was created to grant the necessary permissions for the Lambda function to access S3 and Textract.
+
+![AWS IAM role](assets/POC_Images/POC_07.png)
+
+- **Observability**: **Amazon CloudWatch** was used for real-time logging of the execution and its results.
+
+![Amazon CloudWatch](assets/POC_Images/POC_08.png)
+
+### 4. Execution Methodology
+The process was divided into preparing the test data and executing the analysis requests.
+- **Phase 1: Test Data Preparation** Three distinct images were uploaded to the poc-documentos-datapv-danielo S3 bucket to simulate real-world scenarios with varying quality:
+    - ImagenDePrueba.jpg: A clear image of the front of the identity card.
+    - ImagenDePruebaAtras.jpg: A clear image of the back of the identity card.
+    - ImagenDePruebaPobre.jpg: A stress-test image taken under poor conditions (angled, inconsistent lighting, shadows).
+- **Phase 2: API Call Simulation** Using **Postman**, three separate POST requests were sent to the TeamOneApiGateway endpoint. Each request contained a JSON body specifying one of the test images. For example:
+
+```json
+{
+  "bucketName": "poc-documentos-datapv-danielo",
+  "documentName": "ImagenDePruebaPobre.jpg"
+}
+```
+
+- **Phase 3: Verification** The execution of the ValidarDocumentoSimplePoC Lambda was monitored via Amazon CloudWatch Logs. For each Postman request, the corresponding log stream was inspected to analyze the JSON output containing the text extracted by Amazon Textract.
+### 5. Results & Findings
+The PoC execution was successful across all three test cases, validating the hypothesis.
+- **Test Case 1 (ImagenDePrueba.jpg)**: Textract demonstrated high accuracy in extracting all visible text fields from the front of the identity card. Character recognition was precise with minimal to no errors.
+
+![Test Case 1](assets/POC_Images/POC_02.png)
+
+- **Test Case 2 (ImagenDePruebaAtras.jpg)**: The service successfully extracted text from the back of the card, including smaller font sizes, demonstrating its versatility.
+
+![Test Case 2](assets/POC_Images/POC_03.png)
+
+- **Test Case 3 (ImagenDePruebaPobre.jpg)**: Despite the challenging conditions of the image, Textract showed remarkable resilience, successfully extracting a significant portion of the critical text. While some minor errors were observed, key identifiers remained largely legible.
+
+![Test Case 3](assets/POC_Images/POC_04.png)
+
+### 6. Conclusion & Next Steps
+**Conclusion:** The PoC is considered a resounding success. It has been demonstrated that the proposed serverless architecture (API Gateway -> Lambda -> Textract) is effective and that **Amazon Textract** is a viable and sufficiently accurate technology for the document data extraction needs of the Data Pura Vida project, even under sub-optimal image conditions.
