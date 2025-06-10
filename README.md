@@ -2196,40 +2196,45 @@ The key question to be answered was:
 - **Extraction Accuracy**: Is the capability of **Amazon Textract** to perform OCR on a Costa Rican identity document precise enough to be useful in an automated workflow, even under non-ideal image conditions?
 
 #### 2. Justification / Risk Mitigated
-The automation of document validation is a pillar of the "bio registro verde" registration module. This PoC was crucial for mitigating the fundamental technical risk that the selected AI technology might not be compatible or sufficiently accurate with specific Costa Rican documents. It validated that the base technology is robust, avoiding a costly redesign of the onboarding flow that would otherwise depend on increased manual intervention.
+The automation of document validation is a key pillar of the **"bio registro verde"** registration module. This PoC was essential for mitigating the risk that the selected AI technology might not be compatible or sufficiently accurate with Costa Rican identity documents.
+By validating the robustness of Amazon Textract, this PoC avoids the need for a costly redesign of the onboarding flow, which would otherwise depend on increased manual review or custom models.
 
 #### 3. Architecture & Implemented Technologies 
 The PoC implemented a simplified serverless pipeline using the following components from our technology stack:
-- **API Gateway**: An API named TeamOneApiGateway was configured with a RESTful endpoint:
-    - Endpoint: POST /users/analizar-documento
+- **API Gateway**:   A RESTful API named `TeamOneApiGateway` was configured with the following endpoint:
+    - `POST /users/analizar-documento
 
 ![Api Gateway](assets/POC_Images/POC_01.png)
 
-- **Compute**: An **AWS Lambda** function named ValidarDocumentoSimplePoC was created with the **Python** runtime to orchestrate the analysis.
-    - Code: File named ValidarDocumentoSimplePoC.py
+- **Compute**: An AWS Lambda function named `ValidarDocumentoSimplePoC` was created using the **Python** runtime. This function orchestrated the document analysis workflow.
+    - **Script**: `ValidarDocumentoSimplePoC.py`
 
 ![AWS Lambda function](assets/POC_Images/POC_05.png)
 
-- **Data Storage**: An **Amazon S3** bucket (poc-documentos-datapv-danielo) was used to store the test images.
+- **Data Storage**: An Amazon S3 bucket named `poc-documentos-datapv-danielo` was used to store the test images.
+
 
 ![Amazon S3 bucket](assets/POC_Images/POC_06.png)
 
-- **Artificial Intelligence**: The Amazon Textract service was used to perform the text extraction (OCR).
-- **Security**: An **AWS IAM** role was created to grant the necessary permissions for the Lambda function to access S3 and Textract.
+- **Artificial Intelligence**: **Amazon Textract** was used to perform the text extraction (OCR) from identity document images.
+- **Security**: An AWS IAM role was configured to grant the Lambda function permissions to access both **S3** and **Textract** resources.
+
 
 ![AWS IAM role](assets/POC_Images/POC_07.png)
 
-- **Observability**: **Amazon CloudWatch** was used for real-time logging of the execution and its results.
+- **Observability**: **Amazon CloudWatch Logs** was used to monitor Lambda execution and analyze the extracted text in real-time.
+
 
 ![Amazon CloudWatch](assets/POC_Images/POC_08.png)
 
 ### 4. Execution Methodology
 The process was divided into preparing the test data and executing the analysis requests.
-- **Phase 1: Test Data Preparation** Three distinct images were uploaded to the poc-documentos-datapv-danielo S3 bucket to simulate real-world scenarios with varying quality:
-    - ImagenDePrueba.jpg: A clear image of the front of the identity card.
-    - ImagenDePruebaAtras.jpg: A clear image of the back of the identity card.
-    - ImagenDePruebaPobre.jpg: A stress-test image taken under poor conditions (angled, inconsistent lighting, shadows).
-- **Phase 2: API Call Simulation** Using **Postman**, three separate POST requests were sent to the TeamOneApiGateway endpoint. Each request contained a JSON body specifying one of the test images. For example:
+- **Phase 1: Test Data Preparation** Three images were uploaded to the S3 bucket `poc-documentos-datapv-danielo` to simulate a range of real-world image conditions:
+    - `ImagenDePrueba.jpg`: Clear image of the front of the ID card.
+    - `ImagenDePruebaAtras.jpg`: Clear image of the back of the ID card.
+    - `ImagenDePruebaPobre.jpg`: A low-quality image taken under poor lighting and angle conditions.
+- **Phase 2: API Call Simulation** Each image was tested through a `POST` request to the `TeamOneApiGateway` endpoint. Requests were performed using Postman with JSON bodies such as:
+
 
 ```json
 {
