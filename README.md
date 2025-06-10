@@ -2167,6 +2167,8 @@ We adopt cloud native and scalable design principles to ensure portability, resi
 | **Testing**     | Postman (AWS Integrations) | 10.18+                   | AppSync + REST APIs          | Secure endpoint testing                       | Proprietary (Freemium)      |
 |                 | AWS Lambda Test Runners    | Node.js 20 + Python 3.11 | Jest + PyTest                | Serverless unit testing                       | MIT                         |
 
+---
+
 ## Proof of Concept (PoCs)
 ### Introduction and Strategy
 As part of the comprehensive design for the Data Pura Vida system and in fulfillment of the project's design attributes, a Proof of Concept (PoC) phase has been conducted. The purpose of these PoCs is not to develop functional prototypes, but rather to perform focused technical experiments to validate key assumptions and mitigate the most significant risks before full-scale implementation.
@@ -2183,6 +2185,8 @@ Each PoC report below is structured to clearly present:
 - The Conclusion and Recommended Next Steps based on the findings.
 
 This approach ensures that our design decisions are not only theoretically sound but are also empirically validated in a practical environment.
+
+---
 
 ### PoC 1: AI Document Data Extraction Viability
 #### 1. Objective and Key Questions to Answer
@@ -2251,3 +2255,84 @@ The PoC execution was successful across all three test cases, validating the hyp
 
 ### 6. Conclusion & Next Steps
 **Conclusion:** The PoC is considered a resounding success. It has been demonstrated that the proposed serverless architecture (API Gateway -> Lambda -> Textract) is effective and that **Amazon Textract** is a viable and sufficiently accurate technology for the document data extraction needs of the Data Pura Vida project, even under sub-optimal image conditions.
+
+---
+
+### PoC 2: Data Lake with Apache Iceberg (Final Report)
+
+#### 1. Objective and Key Questions to Answer
+The objective of this Proof of Concept (PoC) was to validate the proposed Data Lake architecture, confirming its technical feasibility, functional completeness, and performance for the **Data Pura Vida** use cases. The architecture is based on **Amazon S3** and **Apache Iceberg**.
+
+The key questions to be answered were:
+- **Query Performance**: Is the response time of **Amazon Athena** when querying Iceberg tables on S3 fast enough to support the interactive visualizations planned for the *Descubriendo Costa Rica* portal?
+- **Data Versioning**: Is the versioning and *time travel* feature of **Apache Iceberg** practical to implement and functional enough to support data auditing and historical analysis?
+
+#### 2. Justification / Risk Mitigated
+The adoption of **Apache Iceberg** is a critical architectural decision to provide advanced capabilities (ACID transactions, data versioning, schema evolution) on top of an S3-based Data Lake. This PoC was essential to mitigate the risk of adopting a new technology by validating:
+- That query performance supports smooth user experience in the dashboards.
+- That historical versioning for auditing is technically achievable with Iceberg.
+
+#### 3. Architecture & Implemented Technologies
+The PoC implemented a simplified data pipeline using the following technologies:
+
+- **Data Storage**: An Amazon S3 bucket (`poc-datalake-datapv-danielo`) to store source CSV files and the Iceberg table data.
+
+- **Data Catalog**: An **AWS Glue** database (`poc_datalake_db`) was used to register metadata for the Iceberg table.
+
+- **ETL (Processing)**: An **AWS Glue** job (`PoCIcebergWriter`) written in **PySpark** to read CSVs and write to the Iceberg table.
+
+- **Analytical Query Engine**: **Amazon Athena** to run SQL queries directly on the Iceberg table.
+
+- **Security**: An **AWS IAM** role was configured to allow the Glue job access to S3 and Glue Catalog.
+
+- **Script Code**: File named `GlueScriptTeamOne.py`
+
+![POC Setup](assets/POC_Images/POC_09.png)
+![Glue Job](assets/POC_Images/POC_10.png)
+
+#### 4. Execution Methodology
+The execution was divided into two phases: table versioning and analytical verification.
+
+- **Phase 1: Version Creation and Data Loading**
+    - **Version 1 (Initial Snapshot)**:
+        - A file `datos_v1.csv` with 3 records was uploaded to S3.
+        - The Glue job ran in **overwrite** mode, creating the `dataset_transacciones` table and writing version 1.
+    - **Version 2 (Incremental Load)**:
+        - A file `datos_v2.csv` with 2 additional records was uploaded.
+        - The job was modified to use **append** mode, creating version 2 without modifying the original data.
+
+- **Phase 2: Verification with Amazon Athena**
+    - After loading both versions, validation queries were run using the Athena SQL editor.
+
+#### 5. Results & Findings
+The tests in Athena validated all PoC objectives.
+
+- **Test Case 1: Latest Version Validation**
+    - **Action**:  
+    ```sql
+    SELECT * FROM "poc_datalake_db"."dataset_transacciones";
+    ```
+    - **Result**: Returned 5 rows (3 from `datos_v1.csv` and 2 from `datos_v2.csv`), confirming successful append and correct reading of current table state.
+
+    ![Test Case 1](assets/POC_Images/POC_11.png)
+
+- **Test Case 2: Time Travel Functionality**
+    - **Action**: Queried table history using `$history`, then used:
+    ```sql
+    SELECT * FROM "poc_datalake_db"."dataset_transacciones" FOR TIMESTAMP AS OF '<timestamp>';
+    ```
+    - **Result**: Returned only the original 3 rows from `datos_v1.csv`, confirming working time travel and versioning.
+
+    ![Test Case 2](assets/POC_Images/POC_12.png)
+    ![Test Case 2b](assets/POC_Images/POC_13.png)
+
+- **Test Case 3: Dashboard Query Simulation (Performance)**
+    - **Action**: Executed a `GROUP BY` and `SUM` query simulating dashboard workload.
+    - **Result**: Query completed in under 4 seconds, demonstrating sufficient performance for interactive use.
+
+    ![Test Case 3](assets/POC_Images/POC_14.png)
+
+#### 6. Conclusion & Next Steps
+**Conclusion**: The PoC is considered a complete success. It demonstrated that the proposed Data Lake architecture—using **Amazon S3**, **Apache Iceberg**, **AWS Glue**, and **Amazon Athena**—is robust, functional, and capable of supporting both performance and versioning requirements for **Data Pura Vida**.
+
+---
