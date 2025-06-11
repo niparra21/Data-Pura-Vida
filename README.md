@@ -2258,7 +2258,7 @@ The PoC execution was successful across all three test cases, validating the hyp
 
 ![Test Case 3](assets/POC_Images/POC_04.png)
 
-### 6. Conclusion & Next Steps
+### 6. Conclusion
 **Conclusion:** The PoC is considered a resounding success. It has been demonstrated that the proposed serverless architecture (API Gateway -> Lambda -> Textract) is effective and that **Amazon Textract** is a viable and sufficiently accurate technology for the document data extraction needs of the Data Pura Vida project, even under sub-optimal image conditions.
 
 ---
@@ -2337,7 +2337,7 @@ The tests in Athena validated all PoC objectives.
 
     ![Test Case 3](assets/POC_Images/POC_14.png)
 
-#### 6. Conclusion & Next Steps
+#### 6. Conclusion
 **Conclusion**: The PoC is considered a complete success. It demonstrated that the proposed Data Lake architecture—using **Amazon S3**, **Apache Iceberg**, **AWS Glue**, and **Amazon Athena**—is robust, functional, and capable of supporting both performance and versioning requirements for **Data Pura Vida**.
 
 ---
