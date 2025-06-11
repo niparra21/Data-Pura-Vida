@@ -2341,3 +2341,98 @@ The tests in Athena validated all PoC objectives.
 **Conclusion**: The PoC is considered a complete success. It demonstrated that the proposed Data Lake architecture—using **Amazon S3**, **Apache Iceberg**, **AWS Glue**, and **Amazon Athena**—is robust, functional, and capable of supporting both performance and versioning requirements for **Data Pura Vida**.
 
 ---
+
+### PoC 3: Structured Data Extraction and Logical Validation (Final Report)
+
+#### 1. Objective and Key Questions to Answer
+This Proof of Concept (PoC) serves as a direct continuation of PoC #1. Its primary objective was to validate the system's ability to process raw OCR output, structure it into a useful data model, apply simple business validation rules, and persist the structured result.
+
+The key questions to be answered were:
+- **Data Structuring**: Can we reliably parse the raw text output from **Amazon Textract** and map it to a predefined, structured JSON object?
+- **Logical Validation**: Is it feasible to implement business logic within the same Lambda function to validate the integrity of the extracted data (e.g., presence of all required fields)?
+- **Structured Persistence**: Can we successfully persist this clean, validated JSON object into a **NoSQL database (Amazon DynamoDB)** for subsequent use?
+
+#### 2. Justification / Risk Mitigated
+While PoC #1 mitigated the risk of initial text extraction, this PoC mitigates the subsequent risk of the extracted data being "noisy" or difficult to parse, which would render the automation fragile. By validating this step, confidence in achieving a nearly fully automated identity validation flow is significantly increased, focusing human intervention on only the most exceptional cases. 
+
+This PoC directly addresses the **"Develop Structuring Logic"** recommendation.
+
+#### 3. Architecture & Implemented Technologies
+The architecture for this PoC was an extension of the first, creating a new, separate serverless flow to ensure isolation.
+
+- **API Gateway**: A new endpoint was added to the `TeamOneApiGateway` API:
+  - `POST /users/procesar-documento-estructurado`
+
+  ![API Gateway](assets/POC_Images/POC_15.png)
+
+- **Compute**: A new AWS Lambda function `EstructurarValidacionDocumentoPoC` was created using the **Python** runtime.
+  - **Script**: `EstructurarValidacionDocumentoPoC.py`
+
+  ![AWS Lambda](assets/POC_Images/POC_16.png)
+
+- **Artificial Intelligence**: **Amazon Textract** was used, specifically the `DetectDocumentText` API, followed by custom parsing logic.
+
+- **Data Storage**: The existing Amazon S3 bucket `poc-documentos-datapv-danielo` was reused to store source images.
+
+  ![Amazon S3](assets/POC_Images/POC_06.png)
+
+- **Database**: A new Amazon DynamoDB table `ResultadosValidacionDocumentos` was created to store the structured results.
+
+  ![DynamoDB](assets/POC_Images/POC_17.png)
+
+- **Security**: A new AWS IAM role was created for the Lambda, granting permissions to **S3**, **Textract**, and the new **DynamoDB** table.
+
+  ![IAM Role](assets/POC_Images/POC_18.png)
+
+#### 4. Execution Methodology
+The process involved updating the backend logic and testing it against the same image set used in PoC #1.
+
+- **Environment Setup**:  
+  - Created a DynamoDB table `ResultadosValidacionDocumentos` with `idValidacion` as the partition key.  
+  - Created a Lambda function `EstructurarValidacionDocumentoPoC` and assigned the appropriate IAM role.
+
+- **Logic Implementation**:  
+  The Lambda function performs the following:
+  1. Calls `DetectDocumentText` from Textract.
+  2. Parses returned text lines using a custom Python function to extract key-value pairs (e.g., "Nombre:", "1°Apellido:").
+  3. Populates a structured Python dictionary.
+  4. Validates required fields (e.g., `nombre`, `primerApellido`).
+  5. Generates a unique ID and stores the final object (with validation status) in DynamoDB.
+
+- **API Configuration**:  
+  Configured `POST /users/procesar-documento-estructurado` in API Gateway to invoke the new Lambda function.
+
+- **Testing**:  
+  Used **Postman** to send test requests with:
+  - `ImagenDePrueba.jpg` (high quality)
+  - `ImagenDePruebaPobre.jpg` (low quality)
+
+- **Verification**:  
+  Verified results via:
+  - JSON response in Postman
+  - DynamoDB item inspection in AWS Console
+
+#### 5. Results & Findings
+The PoC execution was successful, demonstrating the effectiveness of the custom parsing and validation logic.
+
+- **Test Case 1 (High-Quality Image)**:  
+  - `ImagenDePrueba.jpg` returned `200 OK`.
+  - All fields in `datosExtraidos` were correctly populated.
+  - `erroresValidacion` was empty.
+  - `estado` was `COMPLETADO_OK`.
+
+  ![Test Case 1](assets/POC_Images/POC_19.png)
+
+- **Test Case 2 (Low-Quality Image)**:  
+  - `ImagenDePruebaPobre.jpg` also returned `200 OK`.
+  - `nombre` and `primerApellido` were empty due to poor OCR.
+  - `erroresValidacion` included messages for missing required fields.
+  - `estado` was `COMPLETADO_CON_ERRORES`.
+
+  ![Test Case 2](assets/POC_Images/POC_20.png)
+
+#### 6. Conclusion & Next Steps
+**Conclusion:**  
+This Proof of Concept was a complete success. It demonstrates that by combining **Amazon Textract** with custom parsing and validation logic in **AWS Lambda**, we can create a robust data extraction pipeline. The solution performs well on clean images and gracefully handles validation errors for poor-quality inputs. This approach is more resilient than relying solely on pre-trained models such as `AnalyzeID`.
+
+---
