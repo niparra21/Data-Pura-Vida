@@ -1531,15 +1531,6 @@ await glue
 }
 ```
 
-**Functional code**
-
-```json
-aws lakeformation grant-permissions \
-  --principal DataLakePrincipalIdentifier=arn:aws:iam::123456789012:user/analista \
-  --permissions SELECT \
-  --resource '{ "Table": { "DatabaseName": "datos", "Name": "datasets_publicados" } }'
-```
-
 ### Amazon QuickSight
 
 - **Protocol**: QuickSight Embedding SDK + AWS SDK (GenerateEmbedUrlForDashboard)
@@ -1868,19 +1859,6 @@ await stepfunctions
   "datasetId": "ds-999",
   "resultado": "Error: permiso denegado"
 }
-```
-
-**Functional query**
-
-```json
-curl -X POST "$OPENSEARCH_ENDPOINT/logs/_search" -H 'Content-Type: application/json' -d '{
-  "query": {
-    "match": {
-      "accion": "EliminarDataset"
-    }
-  }
-}'
-
 ```
 
 ### Amazon CloudWatch
@@ -2235,7 +2213,7 @@ The system must support uploading large datasets (hundreds of MBs to multiple GB
 
 ### Solution Diagram
 
-![Imagen del Saga Pattern](./assets/SagaPattern.png)
+![Imagen del Saga Pattern](./assets/Scheduler-Agent-Supervisor-Pattern.png)
 
 ### Technical Solution
 The chunked upload process is managed by three primary roles:
