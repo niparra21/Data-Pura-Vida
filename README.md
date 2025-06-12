@@ -327,61 +327,57 @@ Roles can be distributed in squads or sprints. For early phases (M1–M3), focus
 This section defines how each legal and regulatory framework is technically enforced within the **Data Pura Vida** platform. It translates abstract legal principles into actionable rules, showing exactly **what to implement**, **where**, and **how**, for system developers and security teams.
 
 
-### Law 8968 – Costa Rica's Personal Data Protection
-
-| Policy | Module | Technical Enforcement |
-|--------|--------|------------------------|
-| Informed consent | Green Bio Registration | Mandatory checkbox field + timestamp in DB; stored in audit trail |
-| Data transparency | Happy Sharing Data | UI for data usage preferences; stored per user |
-| Sensitive data access control | Data Lake, Security | RLS (Row-Level Security) by user/entity ID |
-| Data deletion by request | Backoffice | `DELETE /user-data/:id` API with admin approval + MFA |
-| Data encryption | DB layer | AES-256 encryption at rest + KMS-managed keys |
 
 
-### GDPR – General Data Protection Regulation
+### Law 8968 – Personal Data Protection (Costa Rica)
 
-| Policy | Module | Technical Enforcement |
-|--------|--------|------------------------|
-| Right to access/port data | Backoffice, API | `GET /user-data/export` returns JSON; signed |
-| Right to erasure | Backoffice | Soft delete with `deleted_at`; purged via background task |
-| Consent registry | Registration | Stored in `consents` table with `user_id`, `policy_id`, `timestamp` |
-| Breach notification | Security, Notifications | Alert triggered via CloudWatch or App Insights; auto-email to users |
+| Policy                          | Where? (Module)            | How and when is it applied? (Technical implementation)                                                              |
+|----------------------------------|----------------------------|---------------------------------------------------------------------------------------------------------------------|
+| Informed consent                | Bio Verde Registration     | Mandatory `checkbox` in the initial form; saved with `timestamp` in the `consents` table; audited in logs.          |
+| Data usage transparency         | Happy Sharing Data         | Data usage preferences view (`/data-preferences`); changes persisted per user in `data_preferences`.                |
+| Sensitive data access control   | Data Lake, Security        | RLS filter (`user_id` or `org_id`) in Glue and QuickSight; applied to each query based on JWT token.                |
+| Deletion upon request           | Backoffice Admin           | `DELETE /user-data/:id` endpoint with MFA validation; entry recorded in `deletion_requests`.                        |
+| Data encryption                 | Database layer             | AES-256 encryption at rest (S3, RDS, DynamoDB); keys managed by AWS KMS with automatic rotation.                    |
 
+### GDPR – General Data Protection Regulation (EU)
+
+| Policy                           | Where? (Module)           | How and when is it applied? (Technical implementation)                                                              |
+|-----------------------------------|---------------------------|---------------------------------------------------------------------------------------------------------------------|
+| Right of access / portability     | Backoffice, API           | `GET /user-data/export` returns user data in digitally signed JSON; generated on-demand.                            |
+| Right to be forgotten             | Backoffice                | Logical deletion: `deleted_at` field is set; permanent purge by weekly `cron` job (`purgeDeletedUsersJob`).         |
+| Consent record                    | Registration              | Consents stored in `consents` table (`user_id`, `policy_id`, `timestamp`); updated if changed.                      |
+| Breach notification               | Security, Notifications   | Detection via CloudWatch (or X-Ray); automatic notification by SES to affected users with technical summary.         |
 
 ### ISO/IEC 27001 – Information Security Management
 
-| Policy | Module | Technical Enforcement |
-|--------|--------|------------------------|
-| Access control | Security, Backoffice | IAM roles + RBAC + RLS enforced at endpoint and DB levels |
-| Audit of changes and access | Audit system | Logs per user/event/resource; stored in `audit_logs` table |
-| Encryption at rest and transit | Security | HTTPS + AES-256 + TLS 1.2+ |
-| Key lifecycle management | Security | Rotation, expiry, revocation; managed via Key Vault |
-| Risk alerts and evaluations | Security, AI | Monitoring with anomaly detection and metrics dashboards |
+| Policy                          | Where? (Module)           | How and when is it applied? (Technical implementation)                                                              |
+|----------------------------------|---------------------------|---------------------------------------------------------------------------------------------------------------------|
+| Access control                  | Security, Backoffice      | IAM + RBAC (by role and subrole) applied to endpoints and database filters (`authStore.role`).                      |
+| Access and change auditing      | Audit system              | Event logging (`/logs`) in the `audit_logs` table with `user_id`, `action`, `resource`, `timestamp`.                |
+| Encryption in transit and at rest| Data security             | HTTPS for all services; AES-256 encryption (at rest) + TLS 1.2+ (in transit); certificate verified by ACM.          |
+| Key lifecycle management        | KMS Security              | Keys generated by AWS KMS; automatic rotation every 365 days; revocation with IAM control and auditing.              |
+| Alerts and risk assessment      | Security + AI             | CloudWatch dashboards with anomalous metrics detected by SageMaker (suspicious or out-of-pattern events).           |
 
 
-### OECD – Data Governance Principles
+### Data Governance Principles – OECD
 
-| Policy | Module | Technical Enforcement |
-|--------|--------|------------------------|
-| Interoperability | Happy Sharing Data | RESTful APIs documented via OpenAPI (Swagger); support for JSON/CSV |
-| Data flow transparency | Dashboard, Audit | Graph of data lineage per dataset; log of access per user |
-| Data quality controls | ETDL (Data Lake) | AI-powered validation for duplicates, missing fields, etc. |
-| Dataset documentation | Catalog | Auto-generated metadata with structure, relations, and usage terms |
+| Principle                      | Where? (Module)           | How and when is it applied? (Technical implementation)                                                              |
+|--------------------------------|---------------------------|---------------------------------------------------------------------------------------------------------------------|
+| Interoperability               | Happy Sharing Data        | REST APIs documented with Swagger/OpenAPI; input/output in JSON/CSV; GraphQL support where applicable.              |
+| Data flow transparency         | Dashboards, Audit         | Traceability graph (`data_lineage`) generated by Glue + stored per event in `lineage_logs`.                         |
+| Data quality control           | ETDL Layer (Glue)         | AI validations (SageMaker): detection of duplicates, empty fields, anomalous data; rules in Glue DataBrew.          |
+| Dataset documentation          | Dataset Catalog           | Metadata automatically generated (Glue Catalog); includes structure, relationships, and usage conditions.            |
 
 
-### AI Regulation Bill (Exp. 23.771 – Costa Rica)
+### AI Bill Project Exp. 23.771 – Costa Rica
 
-| Policy | Module | Technical Enforcement |
-|--------|--------|------------------------|
-| Explainability of AI | Dashboard (Prompt AI) | Prompt logs + human-readable explanation field |
-| Oversight of AI decisions | Backoffice, Audit | All AI actions tagged `triggered_by_AI`; viewable in control panel |
-| Ethical validation in registration | AI + Registration | Use of traceable AI services (e.g., Azure Form Recognizer) with metadata |
-| AI traceability | Security, Audit | Logs per inference: `input`, `output`, `model`, `timestamp`, `confidence` |
+| Requirement                     | Where? (Module)           | How and when is it applied? (Technical implementation)                                                              |
+|----------------------------------|---------------------------|---------------------------------------------------------------------------------------------------------------------|
+| Explainability of decisions      | Dashboard with AI         | AI prompt saved with result in `prompt_logs`; autogenerated `technical explanation` field visible to the user.      |
+| AI decision supervision          | Backoffice + Audit        | Actions marked as `triggered_by_AI`; accessible via admin interface with filters by date, type, and model.          |
+| Ethical validation of records    | Registration + AI         | Models used are auditable (Azure Form Recognizer); logs contain origin, model, `confidence_score`.                  |
+| AI traceability                  | Security + Logs           | Each inference saves `input`, `output`, `model`, `timestamp`, `confidence` in `ai_logs`; visible to admin.          |
 
-### Summary
-
-These policies ensure that **Data Pura Vida** is legally compliant, secure, and auditable at every level — from data registration and AI processing to dashboard visualization and dataset purchases. Each rule is enforceable and traceable by design, ensuring not only political and legal alignment, but also real-world system integrity and developer clarity.
-  
 ---
 
 ## Macro components diagrams
