@@ -1048,6 +1048,1019 @@ This comprehensive decomposition, visually represented in the linked diagrams an
 - **DynamoDB Streams**: Data change traceability.  
 - **SNS/SQS**: Notifications and async processing queues.  
 
+## External Service Integrations
+
+### AWS Cognito
+
+- **Protocol**: OAuth2 + OpenID Connect
+- **Token**: Signed JWT
+- **Authentication**: Native MFA (SMS/TOTP), Identity Federation
+- **Main Class**: `/services/AuthService.ts`
+- **.env**: `COGNITO_USER_POOL_ID`, `COGNITO_CLIENT_ID`, `COGNITO_DOMAIN`
+
+**JWT Class Schema**:
+
+```ts
+const AuthTokenPayload = {
+  sub: "uuid",
+  email: "string",
+  "custom:rol": "string",
+  "custom:organizacion_id": "string",
+  exp: 1718200100,
+  iss: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_xyz",
+  iat: 1718196500,
+  token_use: "id",
+};
+```
+
+**Functional code**:
+
+```ts
+import { Auth } from "aws-amplify";
+
+const user = await Auth.signIn("usuario@correo.com", "MiClave123");
+
+// Tokens para usar con APIs protegidas
+const jwt = (await Auth.currentSession()).getIdToken().getJwtToken();
+console.log("JWT:", jwt);
+```
+
+### Amazon Rekognition
+
+- **Protocol**: HTTPS (AWS SDK)
+- **Authentication**: IAM Role associated with Lambda
+- **Use**: Facial verification (`compareFaces`), liveness detection (`detectFaces`, `detectLiveness`)
+- **Main Class**: `/services/BiometricService.ts`
+- **.env**: `REKOGNITION_REGION`
+
+**Entry scheme**:
+
+```ts
+const RekognitionRequest = {
+  SourceImage: {
+    S3Object: {
+      Bucket: "documentos-usuarios",
+      Name: "selfie.jpg",
+    },
+  },
+  TargetImage: {
+    S3Object: {
+      Bucket: "documentos-usuarios",
+      Name: "foto_cedula.jpg",
+    },
+  },
+  SimilarityThreshold: 90,
+};
+```
+
+**Functional code**:
+
+```ts
+import AWS from "aws-sdk";
+
+const rekognition = new AWS.Rekognition({
+  region: process.env.REKOGNITION_REGION,
+});
+
+const result = await rekognition
+  .compareFaces({
+    SourceImage: {
+      S3Object: { Bucket: "documentos-usuarios", Name: "selfie.jpg" },
+    },
+    TargetImage: {
+      S3Object: { Bucket: "documentos-usuarios", Name: "foto_cedula.jpg" },
+    },
+    SimilarityThreshold: 90,
+  })
+  .promise();
+
+console.log("Coincidencias:", result.FaceMatches);
+```
+
+### AWS IAM Identity Center
+
+- **Protocol**: IAM + STS (Security Token Service)
+- **Authentication**: Single Sign-On (SSO) + control de sesión; asignación dinámica de roles y grupos; integración con Cognito
+- **Use**: Access management for backoffice, API, and dashboards according to group and role
+- **Main Class**: `/services/auth/iamSession.ts`
+- **.env**:
+  - `AWS_REGION`
+  - `AUTHORIZED_GROUPS=[admin,analista,ciudadano]`
+
+**Contract Schema**
+
+```ts
+const UserSession = {
+  sub: "uuid",
+  email: "user@domain.com",
+  groups: ["admin", "backoffice"],
+  sessionName: "Luis Corrales",
+  roles: ["dataset:write", "dataset:read"],
+};
+```
+
+**Functional code**:
+
+```ts
+function checkRole(required: string[]) {
+  return (req, res, next) => {
+    const session = req.userSession;
+    if (!session || !required.some((r) => session.roles.includes(r))) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    next();
+  };
+}
+```
+
+### AWS WAF + Lambda@Edge
+
+- **Protocol**: HTTP(S) with incoming traffic inspection (L7)
+- **Authentication / Llaves**: IAM Role attached to Lambda@Edge
+- **Use**: Filtering of requests
+- **Main Class**: `/edge/geo-block-handler.js`
+- **.env**: _(no required, configuration in WAF console and JSON file)_
+
+**Configuración de WAF**
+
+```json
+{
+  "Name": "AllowCRBlockRest",
+  "Priority": 1,
+  "Action": { "Allow": {} },
+  "Statement": {
+    "GeoMatchStatement": {
+      "CountryCodes": ["CR"]
+    }
+  },
+  "VisibilityConfig": {
+    "SampledRequestsEnabled": true,
+    "CloudWatchMetricsEnabled": true,
+    "MetricName": "GeoMatch"
+  }
+}
+```
+
+**Functional code**:
+
+```ts
+exports.handler = async (event) => {
+  const request = event.Records[0].cf.request;
+  const country = request.headers["cloudfront-viewer-country"]?.[0]?.value;
+
+  if (country !== "CR") {
+    return {
+      status: "403",
+      statusDescription: "Access denied",
+      body: "Este sitio solo está disponible desde Costa Rica.",
+    };
+  }
+
+  return request;
+};
+```
+
+### Amazon Textract
+
+- **Protocol**: HTTPS (AWS SDK)
+- **Authentication**: IAM Role
+- **Use**: Extracted structured text from PDF/JPG documents in S3
+- **Main Class**: `/services/document/TextractService.ts`
+- **.env**: `TEXTRACT_REGION`
+
+**Input schema**
+
+```ts
+const TextractRequest = {
+  Document: {
+    S3Object: {
+      Bucket: "uploads-documentos",
+      Name: "cedula_usuario.pdf",
+    },
+  },
+};
+```
+
+**Functional code**:
+
+```ts
+import AWS from "aws-sdk";
+
+const textract = new AWS.Textract({ region: process.env.TEXTRACT_REGION });
+
+const result = await textract
+  .detectDocumentText({
+    Document: {
+      S3Object: {
+        Bucket: "uploads-documentos",
+        Name: "cedula_usuario.pdf",
+      },
+    },
+  })
+  .promise();
+
+console.log(
+  "Texto detectado:",
+  result.Blocks.map((b) => b.Text).filter(Boolean)
+);
+```
+
+### Amazon SageMaker
+
+- **Protocol**: HTTPS (InvokeEndpoint via AWS SDK)
+- **Authentication**: IAM Role attached to client
+- **Use**: Deduplication, semantic data validation, enrichment of records
+- **Main Class**: `/services/ai/SageDeduplicationService.ts`
+- **.env**:
+  - `SAGEMAKER_REGION`
+  - `SAGEMAKER_ENDPOINT_NAME`
+
+**Input schema**
+
+```ts
+const DatasetSample = {
+  datasetId: "abc123",
+  columnas: ["nombre", "cedula"],
+  registros: [
+    ["Luis Ureña", "123456789"],
+    ["Luis Ureña", "123456789"],
+  ],
+};
+```
+
+**Functional code**:
+
+```ts
+import AWS from "aws-sdk";
+
+const runtime = new AWS.SageMakerRuntime({
+  region: process.env.SAGEMAKER_REGION,
+});
+
+const response = await runtime
+  .invokeEndpoint({
+    EndpointName: process.env.SAGEMAKER_ENDPOINT_NAME!,
+    Body: JSON.stringify(DatasetSample),
+    ContentType: "application/json",
+  })
+  .promise();
+
+const resultado = JSON.parse(response.Body.toString());
+console.log("Respuesta SageMaker:", resultado);
+```
+
+### AWS KMS
+
+- **Protocol**: HTTPS (AWS SDK KMS API)
+- **Authentication**: IAM Role with permissions on the key + key-level policies
+- **Use**: Symmetric encryption (AES), asymmetric encryption (RSA/ECC), key rotation, and tripartite custody
+- **Main Class**: `/services/security/KmsCryptoService.ts`
+- **.env**:
+  - `KMS_KEY_ID`
+  - `KMS_REGION`
+
+**Usage Schema**
+
+```ts
+const payload = {
+  plaintext: "MiDatoConfidencial",
+};
+```
+
+**Functional code**:
+
+```ts
+import AWS from "aws-sdk";
+
+const kms = new AWS.KMS({ region: process.env.KMS_REGION });
+
+const encrypted = await kms
+  .encrypt({
+    KeyId: process.env.KMS_KEY_ID!,
+    Plaintext: Buffer.from(payload.plaintext),
+  })
+  .promise();
+
+const decrypted = await kms
+  .decrypt({
+    CiphertextBlob: encrypted.CiphertextBlob,
+  })
+  .promise();
+
+console.log("Texto original:", decrypted.Plaintext.toString());
+```
+
+### AWS Secrets Manager
+
+- **Protocol**: HTTPS (REST API vía AWS SDK)
+- **Authentication**: IAM Role (para crear, leer o rotar secretos)
+- **Keys**: All secrets are encrypted with AWS KMS (either the `DefaultEncryptionKey` or a custom key)
+- **Use**: Custodia de tokens, claves API, certificados, llaves compartidas (Schema tripartita)
+- **Main Class**: `/services/security/SecretsManagerService.ts`
+- **.env**:
+  - `SECRETS_REGION`
+  - `SECRET_NAME_API_KEYS`, `SECRET_NAME_SHARED_KEY`
+
+**Secret schema**
+
+```json
+{
+  "sinpe_token": "abc123xyz",
+  "stripe_key": "sk_live_...",
+  "shared_key_part": "MIIBIjANB..."
+}
+```
+
+**Functional code**:
+
+```ts
+import AWS from "aws-sdk";
+
+const secrets = new AWS.SecretsManager({ region: process.env.SECRETS_REGION });
+
+const secret = await secrets
+  .getSecretValue({
+    SecretId: process.env.SECRET_NAME_SHARED_KEY!,
+  })
+  .promise();
+
+const valores = JSON.parse(secret.SecretString!);
+console.log("Clave compartida:", valores.shared_key_part);
+```
+
+### Amazon S3
+
+- **Protocol**: REST sobre HTTPS (AWS SDK o presigned URLs)
+- **Authentication**: IAM Role (programmatic access) + bucket policies (read, write, public/private)
+- **Use**: Upload, storage, and controlled download of structured/semi-structured files (CSV, JSON, XLSX)
+- **Main Class**: `/services/storage/S3DatasetService.ts`
+- **.env**:
+  - `S3_DATASETS_BUCKET`
+  - `S3_REGION`
+  - `MAX_FILE_SIZE_MB`
+
+**Dataset metadata schema**
+
+```ts
+const DatasetS3Metadata = {
+  id: "dataset-001",
+  nombre: "Demografía 2025",
+  formato: "csv",
+  uploadedBy: "user-123",
+  sizeMB: 45,
+};
+```
+
+**Functional code**:
+
+```ts
+import AWS from "aws-sdk";
+
+const s3 = new AWS.S3({ region: process.env.S3_REGION });
+
+await s3
+  .putObject({
+    Bucket: process.env.S3_DATASETS_BUCKET!,
+    Key: "datasets/demografia-2025.csv",
+    Body: archivoBuffer,
+    ContentType: "text/csv",
+  })
+  .promise();
+```
+
+### AWS Glue
+
+- **Protocol**: Glue SDK (boto3 or AWS SDK), JDBC (connectors to external sources)
+- **Authentication**: IAM Role associated with the Glue Job (with permissions on S3, Glue Catalog, and Lake Formation)
+- **Use**: Automated ETL, incremental loading, version management (Iceberg), dataset cataloging
+- **Main Class**: `/services/etl/GlueETLService.ts`
+- **.env**:
+  - `GLUE_JOB_NAME`
+  - `GLUE_REGION`
+  - `GLUE_SCRIPT_PATH`
+  - `GLUE_TEMP_DIR`
+
+**Schema del Glue Job**
+
+```ts
+const GlueJobMetadata = {
+  jobName: "dataset-transform-etl",
+  scriptPath: "s3://scripts/etl.py",
+  inputBucket: "uploads/",
+  outputTable: "iceberg.datasets",
+};
+```
+
+**Functional code**
+
+```ts
+import AWS from "aws-sdk";
+
+const glue = new AWS.Glue({ region: process.env.GLUE_REGION });
+
+await glue
+  .startJobRun({
+    JobName: process.env.GLUE_JOB_NAME!,
+    Arguments: {
+      "--INPUT_BUCKET": "s3://uploads/",
+      "--OUTPUT_TABLE": "iceberg.datasets",
+      "--scriptPath": process.env.GLUE_SCRIPT_PATH!,
+    },
+  })
+  .promise();
+```
+
+---
+
+### Amazon Athena
+
+- **Protocol**: SQL over REST API (AWS SDK), JDBC/ODBC (for external visualization)
+- **Authentication**: IAM Role with permissions on `athena:*`, result S3 bucket, and Glue Catalog
+- **Use**: Preview of uploaded datasets, ad-hoc exploration of data transformed with Glue, integration with QuickSight for citizen and administrative dashboards
+- **Main Class**: `/services/analytics/AthenaQueryService.ts`
+- **.env**:
+
+  - `ATHENA_REGION`
+  - `ATHENA_OUTPUT_LOCATION`
+  - `DATABASE_NAME`
+
+  **Query schema**
+
+### AWS Glue DataBrew
+
+- **Protocol**: HTTPS + AWS Glue DataBrew SDK
+- **Authentication**: IAM Role with permissions on DataBrew, S3, and Glue Catalog
+- **Use**: Cleansing and normalization of datasets uploaded by users before validation or being offered for sale
+- **Main Class**: `/services/etl/DataBrewCleaner.ts`
+- **.env**:
+  - `DATABREW_PROJECT_NAME`
+  - `DATABREW_REGION`
+  - `DATABREW_OUTPUT_BUCKET`
+
+**Step Schema**
+
+```json
+[
+  { "Action": "REMOVE_DUPLICATES", "Parameters": { "columns": ["cedula"] } },
+  {
+    "Action": "FORMAT_DATE",
+    "Parameters": { "column": "fecha", "format": "yyyy-MM-dd" }
+  },
+  {
+    "Action": "FILL_NULLS",
+    "Parameters": { "column": "provincia", "value": "Desconocido" }
+  }
+]
+```
+
+### AWS Lake Formation
+
+- **Protocol**: Native integration with AWS Glue, S3, and Athena (no direct SDK required)
+- **Authentication**: IAM Role + tag-based access policies and governed permissions
+- **Use**: Dataset access control by user, organization, or data type (Row-Level Security, Column-Level Access)
+- **Main Class**: _(manual configuration via console or CLI)_
+- **.env**: _(not required; access governed by Glue/Lake cataloging permissions)_
+
+**Policy Schema**
+
+```json
+{
+  "TagPolicy": {
+    "DatasetClass": ["public", "privado"],
+    "RegionAccess": ["CR", "NO_CR"]
+  },
+  "RowLevelFilter": {
+    "dataset_propietario": "usuario-123"
+  }
+}
+```
+
+**Functional code**
+
+```json
+aws lakeformation grant-permissions \
+  --principal DataLakePrincipalIdentifier=arn:aws:iam::123456789012:user/analista \
+  --permissions SELECT \
+  --resource '{ "Table": { "DatabaseName": "datos", "Name": "datasets_publicados" } }'
+```
+
+### Amazon QuickSight
+
+- **Protocol**: QuickSight Embedding SDK + AWS SDK (GenerateEmbedUrlForDashboard)
+- **Authentication**: IAM Role + user registration in QuickSight (Enterprise Edition, namespace `default`)
+- **Use**: Embedded visualization of analytical dashboards in the user portal or backoffice, with data filtered by permissions
+- **Main Class**: `/services/visualization/QuickSightEmbedService.ts`
+- **.env**:
+  - `QUICKSIGHT_REGION`
+  - `QUICKSIGHT_DASHBOARD_ID`
+  - `QUICKSIGHT_NAMESPACE`
+  - `QUICKSIGHT_USER_ARN_PREFIX`
+
+**Session Embed Schema**
+
+```ts
+const QuickSightEmbedRequest = {
+  userArn: "arn:aws:quicksight:us-east-1:123456789012:user/default/usuario-123",
+  dashboardId: "dashboard-abc123",
+  sessionLifetimeInMinutes: 600,
+};
+```
+
+**Functional code**:
+
+```ts
+import AWS from "aws-sdk";
+
+const quicksight = new AWS.QuickSight({
+  region: process.env.QUICKSIGHT_REGION,
+});
+
+const result = await quicksight
+  .generateEmbedUrlForRegisteredUser({
+    AwsAccountId: "123456789012",
+    DashboardId: process.env.QUICKSIGHT_DASHBOARD_ID!,
+    IdentityType: "QUICKSIGHT",
+    SessionLifetimeInMinutes: 600,
+    UserArn: `${process.env.QUICKSIGHT_USER_ARN_PREFIX}/usuario-123`,
+  })
+  .promise();
+
+console.log("URL embebida:", result.EmbedUrl);
+```
+
+### Stripe + SINPE API
+
+- **Protocol**: REST API (Stripe) + Webhooks + Payment tokenization + HTTP integration with SINPE
+- **Authentication**:
+  - Stripe: private keys (`sk_test_...`) and public keys (`pk_live_...`)
+  - SINPE: temporary token stored in Secrets Manager
+- **Use**: Dataset purchases, successful payment registration, controlled access release managed by DynamoDB
+- **Main Class**:
+  - `/services/payments/StripeService.ts`
+  - `/webhooks/paymentConfirmation.ts`
+- **.env**:
+
+  - `STRIPE_SECRET_KEY`
+  - `STRIPE_WEBHOOK_SECRET`
+  - `SINPE_API_URL`
+  - `SINPE_TOKEN_SECRET_NAME`
+  - **Applied Patterns**:
+    - `Adapter`: Each gateway (Stripe, SINPE) is implemented as an isolated adapter (`StripePaymentAdapter`, `SinpePaymentAdapter`) to decouple from the domain.
+    - `Facade`: The `PaymentGatewayFacade` class unifies the payment interface and delegates to the corresponding adapter.
+    - `Anti-Corruption Layer`: The adapters translate external contracts into internal domain structures.
+    - `Retry`: Automatic retries with backoff for temporary failures.
+    - `Circuit Breaker`: Configured to prevent repeated calls to failed gateways.
+
+**`PurchaseRequest` Schema**
+
+```ts
+const PurchaseRequest = {
+  datasetId: "ds-123",
+  userId: "user-456",
+  metodo: "stripe|sinpe",
+  monto: 3500,
+};
+```
+
+**`PaymentConfirmationWebhook` Schema**
+
+```ts
+const PaymentConfirmationWebhook = {
+  tipo: "payment_intent.succeeded",
+  datos: {
+    userId: "user-456",
+    datasetId: "ds-123",
+    transaccionId: "txn_abc123",
+    monto: 3500,
+  },
+};
+```
+
+**Functional code**
+
+```ts
+import Stripe from "stripe";
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2022-11-15",
+});
+
+await stripe.paymentIntents.create({
+  amount: 3500,
+  currency: "crc",
+  metadata: {
+    datasetId: "ds-123",
+    userId: "user-456",
+  },
+});
+```
+
+---
+
+### AWS AppSync
+
+**Protocol**: GraphQL over HTTPS (AWS AppSync)  
+**Authentication**: Cognito JWT (OAuth2 OIDC) automatically validated by AppSync  
+**Use**: Query and mutation of entities such as users, datasets, purchases, accesses, validations  
+**Main Class**: `/graphql/schema.graphql`, resolvers in `/resolvers/*.vtl` or Lambda functions  
+**.env**:
+
+- `APPSYNC_API_URL`
+- `APPSYNC_REGION`
+
+**GraphQL Schema**
+
+```graphql
+type Dataset {
+  id: ID!
+  nombre: String!
+  descripcion: String
+  precio: Float
+  propietario: String
+  publicado: Boolean
+}
+```
+
+### API Gateway
+
+- **Protocol**: REST (HTTP/HTTPS with standard methods: GET, POST, PUT, DELETE)
+- **Authentication**: Cognito JWT (validated via authorizer linked to the User Pool)
+- **Use**: External integration points for uploading datasets, checking status, and executing document validations from other entities
+- **Main Class**: `/routes/api/*.ts` (Lambda handlers connected via API Gateway)
+- **.env**:
+  - `API_BASE_URL`
+  - `API_GATEWAY_STAGE`
+
+**Dataset upload endpoint schema**
+
+```http
+POST /api/dataset/upload
+Authorization: Bearer <JWT>
+
+{
+  "nombre": "datasetA",
+  "archivoUrl": "s3://documentos-publicos/ds001.csv"
+}
+```
+
+**Functional code**
+
+```ts
+app.post("/api/dataset/upload", authMiddleware, async (req, res) => {
+  const { nombre, archivoUrl } = req.body;
+  // Validación básica
+  if (!archivoUrl || !nombre) return res.status(400).send("Datos incompletos");
+
+  await registrarCargaDataset({ nombre, archivoUrl, userId: req.user.sub });
+  res.status(200).send({ status: "OK" });
+});
+```
+
+### AWS Lambda
+
+- **Protocol**: Triggers from AppSync (direct resolvers), API Gateway (HTTP), EventBridge (events), S3 (upload), DynamoDB Streams, and SQS
+- **Authentication**: IAM Role assigned per Lambda function; access to S3, DynamoDB, Textract, SageMaker, etc.
+- **Use**:
+  - Automatic validations (documents, duplicates)
+  - Orchestration of verification steps
+  - Payment processing, dataset upload and publication
+- **Main Class**: `/lambdas/*.ts`
+- **.env**: function-specific variables (`TABLE_NAME`, `BUCKET_NAME`, `MODEL_ENDPOINT_NAME`, etc.)
+
+**Example payload from AppSync**
+
+```json
+{
+  "fieldName": "crearDataset",
+  "arguments": {
+    "nombre": "Salud Pública 2025",
+    "archivoUrl": "s3://cargas/ds-xyz.csv"
+  },
+  "identity": {
+    "sub": "user-123",
+    "rol": "escuela"
+  }
+}
+```
+
+**Functional code**
+
+```ts
+exports.handler = async (event) => {
+  const { nombre, archivoUrl } = event.arguments;
+  const userId = event.identity.sub;
+
+  // Lógica de registro en DynamoDB
+  await guardarDataset({ nombre, archivoUrl, userId });
+
+  return { status: "OK", mensaje: "Dataset creado" };
+};
+```
+
+---
+
+### AWS Step Functions
+
+- **Protocol**: JSON State Machine + AWS Step Functions SDK
+- **Authentication**: IAM Role that invokes other Lambdas and services such as DynamoDB, Textract, SageMaker, etc.
+- **Use**: Orchestration of sequential validations and tripartite custody; composition of asynchronous tasks and human approvals
+- **Main Class**: `/workflows/publicacionDatasetStateMachine.json`
+- **.env**:
+  - `STEP_FUNCTION_NAME`
+  - `STEP_REGION`
+
+**Simplified state machine schema**
+
+```json
+{
+  "StartAt": "ValidarFormato",
+  "States": {
+    "ValidarFormato": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:...:func:ValidarFormato",
+      "Next": "ClasificarDocumento"
+    },
+    "ClasificarDocumento": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:...:func:ClasificarDocumento",
+      "Next": "EsperarAprobacionHumana"
+    },
+    "EsperarAprobacionHumana": {
+      "Type": "Wait",
+      "Seconds": 3600,
+      "Next": "Finalizar"
+    },
+    "Finalizar": {
+      "Type": "Succeed"
+    }
+  }
+}
+```
+
+**Functional code**
+
+```ts
+import AWS from "aws-sdk";
+
+const stepfunctions = new AWS.StepFunctions({
+  region: process.env.STEP_REGION,
+});
+
+await stepfunctions
+  .startExecution({
+    stateMachineArn: process.env.STEP_FUNCTION_NAME!,
+    input: JSON.stringify({
+      datasetId: "ds-123",
+      submittedBy: "user-456",
+    }),
+  })
+  .promise();
+```
+
+### AWS CloudTrail
+
+- **Protocol**: JSON log entries (structured records) with export to S3 + OpenSearch for analysis
+- **Authentication**: IAM automatically configured (managed service)
+- **Use**: Auditing of all administrative actions, API invocations, and changes to critical resources (datasets, users, policies)
+- **Main Class**: _(not applicable, logs are managed automatically)_
+- **.env**: _(not required; logs are configured in the CloudTrail/OpenSearch console)_
+
+**Typical log schema (`AuditLogEntry`)**
+
+```json
+{
+  "eventTime": "2025-06-06T14:22:00Z",
+  "eventName": "UpdateDataset",
+  "userIdentity": {
+    "type": "IAMUser",
+    "userName": "admin-user"
+  },
+  "sourceIPAddress": "2800:600:abc...",
+  "requestParameters": {
+    "datasetId": "ds-123",
+    "changes": {
+      "precio": 4000
+    }
+  },
+  "responseElements": {
+    "status": "SUCCESS"
+  }
+}
+```
+
+**OpenSearch Search Configuration**
+
+- Kibana → Index: `cloudtrail-*`
+- Query: `eventName:UpdateDataset AND userIdentity.userName:"admin-user"`
+
+### AWS OpenSearch
+
+- **Protocol**: REST API compatible with Elasticsearch (searches, filters, dashboards)
+- **Authentication**: IAM Role with SigV4 request signing or proxy-based Kibana SSO authentication
+- **Use**: Real-time visualization, search, and analysis of security logs (CloudTrail, Lambda, AppSync, API Gateway)
+- **Main Class**: `/dashboards/opensearch-dashboards.json`
+- **.env**:
+  - `OPENSEARCH_ENDPOINT`
+  - `OPENSEARCH_REGION`
+
+**Typical indexed schema**
+
+```json
+{
+  "timestamp": "2025-06-06T16:02:00Z",
+  "usuario": "admin-user",
+  "accion": "EliminarDataset",
+  "datasetId": "ds-999",
+  "resultado": "Error: permiso denegado"
+}
+```
+
+**Functional query**
+
+```json
+curl -X POST "$OPENSEARCH_ENDPOINT/logs/_search" -H 'Content-Type: application/json' -d '{
+  "query": {
+    "match": {
+      "accion": "EliminarDataset"
+    }
+  }
+}'
+
+```
+
+### Amazon CloudWatch
+
+- **Protocol**: Push of custom metrics via AWS SDK
+- **Authentication**: IAM Role with `cloudwatch:PutMetricData` permissions
+- **Use**: Logging of events such as queries, dataset uploads, validation errors, and endpoint usage monitoring
+- **Main Class**: `/services/monitoring/CloudWatchMetrics.ts`
+- **.env**:
+  - `CLOUDWATCH_NAMESPACE`
+  - `CLOUDWATCH_REGION`
+
+**Input schema for custom metric**
+
+```ts
+const MetricEntry = {
+  namespace: "DataPuraVida",
+  metricName: "ConsultasDataset",
+  value: 1,
+  unit: "Count",
+  dimensions: [{ Name: "datasetId", Value: "ds-123" }],
+};
+```
+
+**Functional code**
+
+```ts
+import AWS from "aws-sdk";
+const cw = new AWS.CloudWatch({ region: process.env.CLOUDWATCH_REGION });
+
+await cw
+  .putMetricData({
+    Namespace: MetricEntry.namespace,
+    MetricData: [
+      {
+        MetricName: MetricEntry.metricName,
+        Value: MetricEntry.value,
+        Unit: MetricEntry.unit,
+        Dimensions: MetricEntry.dimensions,
+      },
+    ],
+  })
+  .promise();
+```
+
+### AWS X-Ray
+
+- **Protocol**: Automatically embedded in AWS Lambda and API Gateway via the X-Ray Daemon
+- **Authentication**: IAM Role with `xray:PutTraceSegments`, `xray:PutTelemetryRecords` permissions
+- **Use**: Detailed tracing of flows such as document validation, purchase processing, and Glue ETL via Lambda
+- **Main Class**: No direct class required (X-Ray is embedded via wrapper or console)
+- **.env**: _(not required if Lambda tracing is already enabled)_
+
+**Trace schema**
+
+```json
+{
+  "trace_id": "1-67993d0f-1234567890abcdef12345678",
+  "segments": [
+    {
+      "name": "lambda-validation",
+      "start_time": 1718200000.123,
+      "end_time": 1718200000.456,
+      "http": {
+        "method": "POST",
+        "url": "/api/validate",
+        "status": 200
+      },
+      "annotations": {
+        "user_id": "usr-456",
+        "dataset_id": "abc-001"
+      },
+      "error": false
+    }
+  ]
+}
+```
+
+**Schema de evento**
+
+```ts
+const AWSXRay = require("aws-xray-sdk");
+const AWS = AWSXRay.captureAWS(require("aws-sdk"));
+```
+
+### Amazon EventBridge
+
+- **Protocol**: JSON Events (event buses + matching patterns)
+- **Authentication**: IAM Role (Lambda, Step Functions, or producer/consumer services)
+- **Use**: Automation of flows such as post-publication dataset notifications, recurring ETL processes, and action traceability
+- **Main Class**: `/services/events/EventBusPublisher.ts`
+- **.env**:
+  - `EVENT_BUS_NAME`
+  - `EVENTBRIDGE_REGION`
+
+**Event schema**
+
+```ts
+const DatasetPublishedEvent = {
+  eventType: "DATASET_PUBLISHED",
+  timestamp: "2025-06-06T15:30:00Z",
+  datasetId: "abc-001",
+  publishedBy: "usuario-123",
+};
+```
+
+**Functional code**:
+
+```ts
+import AWS from "aws-sdk";
+
+const eb = new AWS.EventBridge({ region: process.env.EVENTBRIDGE_REGION });
+
+await eb
+  .putEvents({
+    Entries: [
+      {
+        Source: "data-pura-vida.dataset",
+        DetailType: "DATASET_PUBLISHED",
+        EventBusName: process.env.EVENT_BUS_NAME!,
+        Detail: JSON.stringify(DatasetPublishedEvent),
+      },
+    ],
+  })
+  .promise();
+```
+
+### External Verification APIs
+
+- **Protocol**: External REST (HTTPS)
+- **Authentication**: Depends on the provider (API token or HTTP signature)
+- **Pattern**: Adapter + Anti-Corruption Layer
+- **Use**: Identity validation, legal entity verification, existence checks for individuals/companies
+- **Main Class**: `/src/backend/adapters/ExternalVerificationAdapter.ts`
+- **.env**:
+  - `VERIF_API_URL`
+  - `VERIF_API_TOKEN`
+  - `VERIF_TIMEOUT_MS`
+
+**Adapted payload**
+
+```ts
+const VerificacionInput = {
+  tipoEntidad: "persona",
+  numeroIdentificacion: "1-2345-6789",
+};
+```
+
+**Schema de respuesta (externo)**:
+
+```ts
+const VerificacionOutput = {
+  valido: true,
+  fuente: "RegistroCivil",
+  fecha: "2025-06-05T12:00:00Z",
+};
+```
+
+### AWS CloudHSM
+
+- **Protocol:** PKCS#11 (native to HSM) via VPC + client
+- **Authentication:** Preconfigured client certificates and keys
+- **Pattern:** Adapter + Proxy + Command
+- **Use:** Store 1/3 of the master key outside the system's control
+- **Main Class:** `/src/backend/security/ExternalHSMService.ts`
+- **.env:**
+  - `HSM_CLUSTER_ID`
+  - `HSM_ACCESS_CERT`
+  - `HSM_KEY_ID`
+
+**Example of Use**
+
+```ts
+const firma = externalHSM.sign("clave_tripartita", Buffer.from("hash1234"));
+```
+
 ---
 
 ## Customer Journeys
