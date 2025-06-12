@@ -2180,6 +2180,52 @@ Imagine our AI system is a prestigious artisanal workshop. Its specialty is taki
 
 ![Imagen del Collaborative Pattern #3](./CollaborativePattern.png)
 
+---
+
+## Saga Pattern
+
+### Problem Statement
+
+The system must perform a structural update of the data model in three steps: model transformation, data loading, and model publication. If any step fails, all previous changes must be automatically reverted so that the system remains consistent. The process must log every event for audit and troubleshooting, and notify a data architect if human intervention is required.
+
+### Solution Diagram
+
+![Imagen del Saga Pattern]()
+
+### Technical Solution
+
+The data model update process is executed in three stages:
+
+1. **Transformation** (AWS Lambda)
+2. **Data Load** (AWS Lambda)
+3. **Publication** (AWS S3)
+
+A **Coordinator** controls the entire flow using **AWS Step Functions**, executing each stage and recording the state of each step in **DynamoDB**.  
+If any stage fails, the coordinator triggers specific rollback functions for each completed step:
+
+- **Unpublishing** (S3)
+- **Deleting loaded data** (Lambda)
+- **Reverting the model transformation** (Lambda)
+
+Every action and its result (success or failure) is logged in DynamoDB.  
+If a rollback fails or manual intervention is required, **SNS (Simple Notification Service)** sends an immediate alert to the data architect.
+
+### Components and Responsibilities
+
+- **AWS Step Functions:** Orchestrates and controls the sequence of process steps.
+- **AWS Lambda:** Executes the model transformation, data loading, and all rollback operations.
+- **AWS S3:** Publishes and unpublishes the data model.
+- **DynamoDB:** Stores the state and result of each process step for auditability and recovery.
+- **SNS:** Notifies the data architect in case of errors or failed rollback.
+
+### Interactions
+
+1. Step Functions calls Lambda functions to transform the model, load data, and publish to S3.
+2. Each step's outcome (success or failure) is logged in DynamoDB.
+3. If a failure occurs, Step Functions invokes the rollback Lambdas and unpublishes in S3.
+4. If rollback fails or requires manual intervention, SNS alerts the data architect with process context.
+
+---
 
 ## Arquitectura de clases, patrones y dependencias
 
