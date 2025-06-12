@@ -2190,7 +2190,7 @@ The system must perform a structural update of the data model in three steps: mo
 
 ### Solution Diagram
 
-![Imagen del Saga Pattern]()
+![Imagen del Saga Pattern](./assets/SagaPattern.png)
 
 ### Technical Solution
 
