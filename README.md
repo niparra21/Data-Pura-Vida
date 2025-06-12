@@ -3237,6 +3237,14 @@ We adopt cloud native and scalable design principles to ensure portability, resi
 
 ---
 
+## Functional prototype
+
+### A functional prototype was developed for the dashboard modules.
+
+- **Link:** https://pura-vida-dashboard-vista.lovable.app/
+
+---
+
 ## Proof of Concept (PoCs)
 ### Introduction and Strategy
 As part of the comprehensive design for the Data Pura Vida system and in fulfillment of the project's design attributes, a Proof of Concept (PoC) phase has been conducted. The purpose of these PoCs is not to develop functional prototypes, but rather to perform focused technical experiments to validate key assumptions and mitigate the most significant risks before full-scale implementation.
