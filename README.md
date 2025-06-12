@@ -2227,6 +2227,41 @@ If a rollback fails or manual intervention is required, **SNS (Simple Notificati
 
 ---
 
+## Scheduler-Agent-Supervisor Pattern
+
+### Problem Statement
+
+The system must support uploading large datasets (hundreds of MBs to multiple GBs) to a data lake, ensuring each chunk is processed exactly once, with no duplicates or data loss, even under unreliable network conditions. The process must be resumable, fully auditable, and alert responsible staff if errors or manual intervention are needed.
+
+### Solution Diagram
+
+![Imagen del Saga Pattern](./assets/SagaPattern.png)
+
+### Technical Solution
+The chunked upload process is managed by three primary roles:
+- **Scheduler:** Starts and manages upload sessions, splits files into chunks, assigns tasks to agents, and tracks all states in DynamoDB. Handles retries for failed or missing chunks.
+- **Agents:** Each agent processes assigned chunk upload tasks, uploads the chunk to S3 or processes it via Lambda, and updates chunk status in DynamoDB. Each agent must ensure idempotent processing (no duplicate chunk writes).
+- **Supervisor:** Monitors the global status of the upload workflow by inspecting DynamoDB. If a chunk fails repeatedly or the process stalls, the supervisor may request a retry from the scheduler or update state after manual intervention.
+All interactions with storage (S3), state (DynamoDB), and notifications (SNS) are explicit and auditable. The workflow is scalable, resilient to network issues, and provides real-time monitoring and manual override if required.
+
+### Components and Responsibilities
+
+- **Scheduler (AWS Lambda/Step Functions):** Orchestrates and assigns chunk upload tasks, manages overall session and state in DynamoDB.
+- **Agents (AWS Lambda):** Independently process chunk tasks, upload chunks to S3, update status in DynamoDB, and report results.
+- **Supervisor (AWS Lambda/EC2):** Monitors session status, triggers retries, updates state after review, and may notify staff.
+- **State Store (DynamoDB):** Tracks the status of each chunk and session for audit and recovery.
+- **Remote Resource/Service (S3, Lambda, etc.):** Receives and stores each chunk or executes business logic as needed.
+- **SNS (Simple Notification Service):** Notifies staff of errors, failed uploads, or manual intervention needs.
+  
+### Interactions
+
+1. Scheduler starts upload, splits file into chunks, assigns tasks to agents, and records all state in DynamoDB.
+2. Agents process and upload each chunk to S3 (or via Lambda), updating chunk status in DynamoDB, reporting completion or error to Scheduler.
+3. Supervisor monitors progress via DynamoDB. If a chunk fails or process stalls, Supervisor may instruct Scheduler to retry the step.
+4. All events are logged for auditability and recovery.
+5. If unrecoverable errors occur, SNS alerts responsible staff with session context for manual intervention.
+---
+
 ## Arquitectura de clases, patrones y dependencias
 
 ### Layer: Frontend
