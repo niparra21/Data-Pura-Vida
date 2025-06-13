@@ -429,11 +429,12 @@ Pipeline steps:
 2. .github/workflows/deploy-prod.yml
 Triggered on push to the main branch:
 
+```
 on:
   push:
     branches:
       - main
-      
+ ```     
 Pipeline steps (same as dev, but targeting production):
 
 - Checkout the repository
