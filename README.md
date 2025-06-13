@@ -380,6 +380,86 @@ This section defines how each legal and regulatory framework is technically enfo
 
 ---
 
+## Code Management, Versioning, CI/CD Practices, and Cloud Deployment
+
+As the system is built on AWS, we have adopted a Continuous Integration and Continuous Deployment (CI/CD) strategy using GitHub Actions to streamline and automate the process.
+
+### Code and Version Control
+
+We use Git as the version control system, structured around three main branches:
+
+- main: Stable branch used for production deployment.
+- dev: Integration branch used for validating combined features.
+- feature/<name>: Individual branches used for implementing specific features or modules.
+
+#### Commit Conventions
+
+- feat: New features
+- fix: Bug fixes
+- infra: Infrastructure changes
+- doc: Documentation updates
+
+### Continuous Integration and Deployment (CI/CD)
+
+GitHub Actions is used as the CI/CD engine, with separate pipelines for development and production environments, triggered automatically based on the active branch.
+
+#### Workflow Files
+
+##### 1. .github/workflows/deploy-dev.yml
+
+Triggered on push to the dev branch:
+
+```
+on:
+  push:
+    branches:
+      - dev
+```
+
+Pipeline steps:
+
+- Checkout the repository
+- Set up Node.js (v18)
+- Install dependencies using npm
+- Run unit tests
+- Configure AWS credentials (using GitHub Secrets)
+- Deploy backend to AWS Lambda (npm run deploy:lambda:dev)
+- Deploy frontend to AWS AppRunner (npm run deploy:frontend:dev)
+
+2. .github/workflows/deploy-prod.yml
+Triggered on push to the main branch:
+
+on:
+  push:
+    branches:
+      - main
+      
+Pipeline steps (same as dev, but targeting production):
+
+- Checkout the repository
+- Set up Node.js
+- Install dependencies
+- Run tests
+- Configure AWS credentials
+- Deploy backend (Lambda) using npm run deploy:lambda:prod
+- Deploy frontend (AppRunner) using npm run deploy:frontend:prod
+
+### AWS Deployment
+
+We define two separate environments:
+
+- dev: For testing and validation. More flexible, used by developers.
+- prod: For production use. Strict security policies, limited access, dedicated infrastructure.
+
+### Secrets and Security
+
+AWS credentials are stored securely in GitHub Secrets:
+
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_ACCESS_KEY
+
+These are injected via aws-actions/configure-aws-credentials action.
+
 ## Macro components diagrams
 
 This section contains hierarchical decomposition diagrams, with a top-down (Macro-to-micro decomposition) functional analysis.
