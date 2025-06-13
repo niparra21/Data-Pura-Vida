@@ -2240,789 +2240,885 @@ All interactions with storage (S3), state (DynamoDB), and notifications (SNS) ar
 5. If unrecoverable errors occur, SNS alerts responsible staff with session context for manual intervention.
 ---
 
-## Arquitectura de clases, patrones y dependencias
+# Class architecture, patterns, and dependencies
 
-### Layer: Frontend
+## Layer: Frontend
 
-#### Overview and Key Architectural Patterns
+### Overview and Key Architectural Patterns
 
-The Frontend layer constitutes the user interface for all interactions with the Data Pura Vida ecosystem, both for end users (citizens, companies, researchers) and for system administrators via the Backoffice portal. Its design focuses on providing an intuitive, accessible, responsive, and secure user experience (UX), facilitating information presentation, data capture, and seamless communication with the Backend layer.
+The Frontend layer constitutes the user interface for all interactions with the Data Pura Vida ecosystem, both for end users (citizens, businesses, researchers) and for system administrators via the Backoffice portal. Its design focuses on providing an intuitive, accessible, responsive, and secure user experience (UX), facilitating information display, data input, and smooth communication with the Backend layer.
 
-##### Main Technologies
-- **Main Portal:** React.js integrated with AWS Amplify for connecting with backend services (authentication, storage, APIs).
-- **Backoffice Portal:** Next.js (a framework built on React) to leverage server-side rendering (SSR) and static site generation (SSG) where beneficial, also integrated with AWS Amplify and deployed using AWS AppRunner.
-- **Styles:** Tailwind CSS for utility-first development, ensuring a modern, customizable, and responsive design.
-- **Dashboards (embedding):** Amazon QuickSight Embedded for data visualization.
+#### Main Technologies:
 
-##### Key Architectural Patterns
+* **Main Portal**: React.js integrated with AWS Amplify for connection to backend services (authentication, storage, APIs).
+* **Backoffice Portal**: Next.js (a React-based framework) to leverage server-side rendering (SSR) and static site generation (SSG) where beneficial, also integrated with AWS Amplify and deployed via AWS AppRunner.
+* **Styles**: Tailwind CSS for utility-first development, ensuring modern, customizable, and responsive design.
+* **Dashboards (embedding)**: Amazon QuickSight Embedded for data visualization.
 
-- **Component-Based Architecture (React):** The system will be built on well-defined, reusable, cohesive, and testable React components, styled with Tailwind CSS, ensuring visual consistency and development efficiency. Accessibility (WCAG) will be prioritized.
-- **Single Page Application (SPA) / Next.js Hybrid:** The main portal will operate as a SPA. The Backoffice with Next.js will use a hybrid rendering approach (SSR/SSG/CSR) to optimize performance and experience.
-- **Strategic State Management:**
-    - Local component state: Native React hooks (useState, useReducer).
-    - Server data handling and complex global state: React Query (TanStack Query) will be used for server data fetching, caching, synchronization, and updating. Zustand will be used for managing shared UI global state between unrelated components due to its simplicity and efficiency.
-- **API-Driven:** All communication with business logic and data will be routed through a well-defined API service layer in the frontend, interacting with AWS AppSync (GraphQL) and/or Amazon API Gateway (REST).
-- **Responsive Design:** Responsive design principles will be applied via Tailwind CSS for optimal experience across different devices.
-- **Progressive Web App (PWA):** Future Consideration: PWA features such as service workers and push notifications (potentially with Amazon SES) may be incorporated to enhance the user experience.
-  
----
+#### Key Architectural Patterns:
 
-#### Main React Classes/Modules/Components and Their Responsibilities
+* **Component-Based Architecture (React)**: The system is built upon well-defined, reusable, cohesive, and testable React components styled with Tailwind CSS, ensuring visual consistency and development efficiency. Accessibility (WCAG) is prioritized.
+* **Single Page Application (SPA) / Next.js Hybrid**: The main portal operates as an SPA. The Backoffice uses a hybrid rendering approach (SSR/SSG/CSR) with Next.js to optimize performance and experience.
 
-##### 1. General Structure and Layout Components:
+#### Strategic State Management:
 
-**`App` (React/Next.js Root Component)**  
-- **Responsibility:**  Entry point of the application. Sets up routing (React Router or Next.js router), global context providers (React Query Client, Zustand store, Tailwind theme, AuthService). Initializes singleton frontend services like APIServiceClient.
-  
-**`MainLayout / BackofficeLayout` (React/Next.js Components)**  
-- **Responsibility:**  Define the main visual structure (header, footer, navigation, content area) for the user portal and Backoffice, respectively. Implement responsive base and may contain logic to show/hide elements based on user roles.
-  
-**`AuthGuard` (Higher-Order Component or Custom React Hook)**  
-- **Responsibility:**  Protects routes requiring authentication and/or specific roles, using AuthService to verify state and redirect if necessary.
-  
-**`ErrorBoundary` (React Component)**  
-- **Responsibility:**   Captures JavaScript errors in child components, logs them, and shows a fallback UI. Multiple instances will be implemented for granularity.
+* **Component local state**: Native React hooks (`useState`, `useReducer`).
+* **Server data and complex global state management**: React Query (TanStack Query) will be used for fetching, caching, syncing, and updating server data. Zustand will be used for UI global state shared across unrelated components due to its simplicity and efficiency.
 
-##### 2. UI Kit / Common Components (React and Tailwind CSS):
+#### API-Driven:
 
-- **Responsibility:**  Internal collection of base UI components, reusable, accessible (WCAG), and consistently styled, forming the visual design system. Use of Headless UI with Tailwind CSS is considered.
-- **Examples:** Button, InputField (with validation), SelectField, CheckboxField, ModalDialog, DataTable, CardDisplay, Spinner, AlertMessage, Notificatio nToast.
+All communication with business logic and data is channeled through a well-defined API service layer in the frontend, interacting with AWS AppSync (GraphQL) and/or Amazon API Gateway (REST).
 
-##### 3. Functional Modules (Container Views and Specific Presentation Components):
+#### Responsive Design:
 
-**`Entity Registration Module`**  
-- **RegistroView:**  Orchestrates the registration flow.
-- **TipoEntidadSelector:**  Allows selecting the type of entity.
-- **FormularioDinamicoRegistro:**  Renders forms based on JSON schemas (from backend) and entity type. Validates inputs with Yup.
-- **UploaderDocumentosRegistro:**  Manages file uploads to S3 via Amplify Storage, with previews and client-side validations.
+Responsive design principles will be applied using Tailwind CSS for an optimal experience across devices.
 
-**`User Dataset Management Module`**  
-- **GestionDatasetsView:**  Lists and allows dataset creation/management.
-- **FormularioCargaDataset:**  UI for dataset uploads (file, API, DB).
-- **AsistenteMetadatosDataset:**  UI to define metadata.
-- **ConfiguradorAccesoPrecioDataset:**  UI to define visibility, price, and access.
+#### Progressive Web App (PWA) - Future Consideration:
 
-**`Dataset Catalog`**  
-- **CatalogoView:**  Contains FiltrosDataset and ListaResultadosDataset.
-- **FichaDetalladaDatasetView:**  Allows selecting the type of entity.Shows complete dataset details.
-
-**`Dataset Purchase Module`**  
-- **CheckoutView:**  Orchestrates the payment process.
-- **SelectorMetodoPago:**  Integrates with Stripe Elements and facilitates SINPE interaction.
-
-**`Dashboard and Data Exploration`**  
-- **DashboardView:**  Container for QuickSightEmbeddedView.
-- **QuickSightEmbeddedView:**  Embeds and manages the Amazon QuickSight session (using the Embedded SDK).
-- **PanelControlDashboard:**  Controls to save, share, and interact with QuickSight Q.
-- **MonitorConsumoDatos:**  Displays paid data usage.
-
-**`Backoffice Portal (Next.js Pages)`**  
-- UserManagementPage, KeyAdministrationPage, SystemMonitoringPage, etc., each with dedicated components.
-
-##### 4. Frontend Services (Non-Visual Logic and Communication):
-
-**`APIServiceClient` (and specializations)**  
-- **Responsibility:**  Facade for communicating with backend APIs (AppSync GraphQL/API Gateway REST). Includes interceptors to attach JWT tokens, handle common errors, and centralize API base URL.
-  
-**`AuthService` (Wrapper for AWS Amplify Auth)**  
-- **Responsibility:**  Manages authentication lifecycle (login, signup, logout, tokens) with AWS Cognito. Updates global state (StateService) on changes.
-
-**`StateService` (Implemented with React Query and Zustand)**  
-- **Responsibility:**  React Query handles server state (fetching, caching, etc.). Zustand handles global UI state (user profile, roles, preferences, global loading state) through specific stores (e.g., authStore, registroStore).
-
-**`ConfigService`**  
-- **Responsibility:** Loads and provides frontend configurations from environment variables or a configuration endpoint.
-
-**`FormValidationService` (Using Yup)**  
-- **Responsibility:** Centralizes client-side form validation logic through reusable Yup schemas.
-
-**`NotificationUIManager` (Función Lambda)**  
-- **Responsibility:** Manages display of notifications/toasts (NotificationToast) in the UI.
+PWA features like service workers and push notifications (potentially via Amazon Pinpoint) may be incorporated to enhance user experience.
 
 ---
 
-#### Relevant Design Patterns
+### Main React Classes/Modules/Components and Responsibilities
 
-##### Structural Patterns
+#### 1. General Structure and Layout Components:
 
-- **Facade:** APIServiceClient simplifies backend calls. AuthService simplifies interaction with Amplify/Cognito. QuickSightEmbeddedView acts as a facade for the QuickSight SDK.
-- **Adapter:** Wrapper components for third-party UI libraries or to adapt the QuickSight Embedded SDK into a cohesive React component.
-- **Composite:** Complex views are built by nesting React components, forming a tree structure.
-    
-##### Behavioral Patterns
+* **App (Root React/Next.js Component)**
 
-- **Observer (via State Management – Zustand and React Query):**  Components subscribe to Zustand store changes or React Query results. When data changes, components update.
-- **State:** React components manage their local state. StateService (Zustand) manages global states affecting UI behavior.
-- **Strategy:** FormularioDinamicoRegistro may use strategies to render and validate different field types based on the form schema.
-- **Command:** User interactions that trigger data mutations (e.g., form submission) are handled by React Query, encapsulating execution logic, state, and retries.
-  
----
+  * **Responsibility**: Entry point of the application. Sets up routing (React Router), global context providers (React Query Client, Zustand store, Tailwind theme, AuthService). Initializes frontend singleton services like APIServiceClient.
 
-#### Key Dependencies
+* **MainLayout / BackofficeLayout (React/Next.js Components)**
 
-##### Internal:
-- Between React components (nesting, composition).
-- Views/Pages depend on common components and frontend services (APIServiceClient, AuthService, StateService).
-- State management libraries (Zustand, React Query) and routing (React Router or Next.js router).
+  * **Responsibility**: Define the main visual structure (header, footer, navigation, content area) for the user portal and the Backoffice respectively. Implement responsive base and may contain logic to show/hide elements based on user roles.
 
-##### External
-- **Backend Layer (APIs - AWS AppSync/API Gateway):**  Critical dependency for all business operations and data access. Well-defined API contracts (GraphQL/OpenAPI) are required.
-- **AWS Amplify:** Auth (for Cognito), Storage (for S3), API (for AppSync/API Gateway).
-- **Amazon QuickSight:** Through the QuickSight Embedded SDK.
-- **Stripe Elements:**  For payment UI.
-- **Protocols:**  HTTPS, GraphQL, REST, WSS (for AppSync subscriptions).
-- **NPM Libraries:**  React, Next.js, Tailwind CSS, Zustand, React Query (TanStack Query), Yup, Axios (or similar HTTP client if used outside of Amplify API), AWS SDKs.
-    
+* **AuthGuard (Custom React Hook)**
 
-### Layer: Backend (Including Middlewares, Handlers, and Business Logic)
+  * **Responsibility**: Protect routes requiring authentication and/or specific roles, using AuthService to check status and redirect if necessary.
 
-#### Overview and Key Architectural Patterns
+* **ErrorBoundary (React Component)**
 
-The Backend Layer is the operational and logical core of Data Pura Vida. It is responsible for executing all business logic, processing data, interacting with the Data Layer (persistence), managing communication with Third-Party Services, enforcing detailed business rules and security policies, and exposing robust, secure, and efficient APIs. These APIs are primarily consumed by the Frontend Layer and, potentially, by other authorized systems or services.
+  * **Responsibility**: Captures JavaScript errors in child components, logs them, and shows fallback UI. Multiple instances will be implemented for granularity.
 
-The design is based on a serverless architecture, using AWS Lambda as the main compute platform. APIs are exposed via AWS AppSync (GraphQL) and/or Amazon API Gateway (RESTful). The orchestration of complex workflows is handled by AWS Step Functions, and asynchronous event-driven communication is implemented using Amazon EventBridge, Amazon SNS, and Amazon SQS.
+#### 2. UI Kit / Common Components (React and Tailwind CSS):
 
-##### Main Technologies
-- **Serverless Compute:** AWS Lambda
-- **API Exposure:** AWS AppSync (GraphQL), Amazon API Gateway (REST)
-- **Workflow Orchestration:** AWS Step Functions
-- **Messaging and Events:** Amazon EventBridge, Amazon SNS, Amazon SQS
-- **Integration with AWS Services:** AI (SageMaker, Textract, Rekognition), Data (DynamoDB, S3, Glue, Athena, Lake Formation, Neptune), Security (Cognito, KMS, IAM, WAF), etc.
+* **Responsibility**: Internal collection of base, reusable, accessible (WCAG) UI components with consistent styling, forming the visual design system. Use of Headless UI with Tailwind CSS is considered.
+* **Examples**: `Button`, `InputField` (with validation), `SelectField`, `CheckboxField`, `ModalDialog`, `DataTable`, `CardDisplay`, `Spinner`, `AlertMessage`, `NotificationToast`.
 
-##### Key Architectural Patterns
+#### 3. Functional Modules (Container Views and Specific Presentation Components):
 
-- **Serverless Architecture:** Business logic resides in AWS Lambda functions, promoting scalability and reducing operational overhead.
-- **Microservices-Oriented:** Specialized Lambda functions support a modular design with high cohesion and low coupling, facilitating independent development, deployment, and scaling.
-- **API-Driven:**  Communication is based on well-defined API interfaces (GraphQL and REST).
-- **Event-Driven Architecture (EDA):** Used for asynchronous communication, service decoupling, and response to business or system events (via EventBridge, SNS, SQS).
-- **Hexagonal Architecture (Ports and Adapters - Conceptual):** Within complex Lambdas, domain logic is isolated from external dependencies via clear interfaces (ports) and adapters, enhancing testability and flexibility.
+* **Entity Registration Module**:
 
----
+  * `RegistroView`: Orchestrates the registration flow.
+  * `TipoEntidadSelector`: Allows selection of the entity type.
+  * `FormularioDinamicoRegistro`: Renders forms based on JSON schemas (fetched from backend) and entity type. Validates inputs with Yup.
+  * `UploaderDocumentosRegistro`: Manages file uploads to S3 via Amplify Storage, with client-side previews and validations.
 
-#### Main React Classes/Modules/Components and Their Responsibilities
+* **User Dataset Management Module**:
 
-The following modules represent specialized Lambda functions, AppSync resolvers, API Gateway configurations, and Step Functions workflows that comprise the logic of the Backend layer, grouped by the main functionalities of Data Pura Vida they serve.
+  * `GestionDatasetsView`: Lists and allows users to create/manage datasets.
+  * `FormularioCargaDataset`: UI for dataset upload (file, API, DB).
+  * `AsistenteMetadatosDataset`: UI to define metadata.
+  * `ConfiguradorAccesoPrecioDataset`: UI to define visibility, price, and access.
 
-##### 1. API Interface Sub-layer (Backend Entry Point):
+* **Dataset Catalog**:
 
-**`AppSyncGraphQLService` (AWS AppSync)**  
-- **Responsibility:**  Exposes the main GraphQL API for the frontend. Defines the GraphQL schema. Integrated with AWS Cognito for authentication/authorization and invokes Lambda functions as resolvers.
-  
-**`APIGatewayRESTService` (Amazon API Gateway)**  
-- **Responsibility:**  Exposes RESTful endpoints for specific functionalities or third-party integrations. Integrated with AWS WAF, AWS Cognito, or Lambda Authorizers, and invokes Lambda functions.
+  * `CatalogoView`: Contains `FiltrosDataset` and `ListaResultadosDataset`.
+  * `FichaDetalladaDatasetView`: Displays full dataset details.
 
-##### 2. Business Logic and Orchestration by Main Functionality:
+* **Dataset Purchase Module**:
 
-**`Entity Registration Module`**  
-- **RegistroRequestHandlerLambda:**  Orchestrates the backend registration flow, validates, interacts with GestorFormulariosServiceLambda, invokes document validation and persistence.
-- **GestorFormulariosServiceLambda:**  Provides structure and rules for dynamic forms (from JSON Schema in AppSync or DynamoDB).
-- **ServicioValidacionDatosEntradaLambda:**  Performs advanced business validations.
-- **ServicioPersistenciaRegistroLambda:**  Saves registration information and status in Amazon DynamoDB.
-- **OrquestadorFlujoRegistroStepFunctions:**  (Optional) Manages asynchronous registration flow, including AI validation and manual review.
+  * `CheckoutView`: Orchestrates the payment process.
+  * `SelectorMetodoPago`: Integrates Stripe Elements and facilitates interaction with SINPE.
 
-**`Document Validation with AI Module`**  
-- **OrquestadorValidacionDocumentoStepFunctions:**  Orchestrates the document validation pipeline.
-- **ServicioExtraccionDatosTextractLambda:**  Uses Amazon Textract for OCR and data extraction.
-- **ServicioClasificacionDocumentoComprehendSageMakerLambda:**  Uses SageMaker to classify document types.
-- **ServicioVerificacionContenidoSageMakerLambda:**  Applies business rules and SageMaker models to verify information, format, and detect inconsistencies.
-- **ServicioValidacionFirmasDigitalesKMSLambda:**  Verifies digital signatures using AWS KMS and/or AWS Signer.
-- **ServicioConsultaFuentesExternasLambda:**  Connects to external APIs (via API Gateway) for validations.
-- **RegistroEstadoValidacionDynamoDBModule:**  Stores and updates validation process status in Amazon DynamoDB.
+* **Dashboard and Data Exploration**:
 
-**`Central Security Component` (Backend Implementation)**  
-- **CognitoTriggerLambda:**  Lambda functions as AWS Cognito triggers to customize authentication flows.
-- **RekognitionBiometricServiceLambda:**  Encapsulates logic for biometric verification and liveness detection using Amazon Rekognition.
-- **KeyManagementCoordinatorLambda:**  Orchestrates key management operations for tripartite custody (with AWS KMS, external HSM, AWS Secrets Manager).
-- **WAFRuleManagerLambda:**  (Optional) Dynamically updates AWS WAF rules.
-- **SecurityAuditProcessingLambda:**  Processes AWS CloudTrail logs findings for alerts/security records.
+  * `DashboardView`: Container for `QuickSightEmbeddedView`.
+  * `QuickSightEmbeddedView`: Embeds and manages the Amazon QuickSight session (via Embedded SDK).
+  * `PanelControlDashboard`: Controls to save, share, and interact with QuickSight Q.
+  * `MonitorConsumoDatos`: Visualizes the usage of paid data.
 
-**`User Dataset Management Module`**  
-- **DatasetUploadHandlerLambda:**  Handles file uploads to S3 or configuration of external connections (credentials in AWS Secrets Manager).
-- **MetadataExtractionServiceLambda:**  Uses AWS Glue DataBrew or Amazon SageMaker to suggest metadata.
-- **DatasetConfigurationServiceLambda:**  Stores dataset configuration in Amazon DynamoDB.
-- **DatasetLifecycleManagerLambda:**  Manages temporary availability and recurring/delta uploads using Amazon EventBridge and Amazon SNS/API Gateway for callbacks.
-- **ETDLOrchestratorTriggerLambda:**  Triggers the ETDL pipeline in the Data Lake.
-- **DatasetAccessPolicyManagerLambda:**  Translates access settings into AWS Lake Formation/IAM policies.
+* **Backoffice Portal (Next.js Pages)**:
 
-**`Core Data Lake and Backend Data Processing`**  
-- **GlueETDLJobs (PySpark/Scala in AWS Glue):**  Main ETDL logic.
-- **SageMakerProcessingPipelines:**  ML tasks integrated into ETDL (duplicate detection with SageMaker or Amazon Entity Resolution, modeling).
-- **DataLakeOrchestrationStepFunctions:**  Orchestrates Glue Jobs, SageMaker Jobs, and Lambdas in ETDL pipelines.
-- **DeltaLoadProcessorLambda:**  Processes delta loads (identified via Glue).
-- **LakeFormationAdminServiceLambda:**  Programmatic administration of permissions in AWS Lake Formation.
+  * `UserManagementPage`, `KeyAdministrationPage`, `SystemMonitoringPage`, etc., each with dedicated components.
 
-**`Dataset Catalog`**  
-- **DatasetSearchServiceLambda:**  Processes search/filters (querying AWS Glue Data Catalog via Amazon Athena and Amazon DynamoDB), applying AWS Lake Formation visibility.
-- **DatasetDetailServiceLambda:**  Retrieves combined details from Glue Data Catalog, DynamoDB, and S3.
+#### 4. Frontend Services (Non-Visual Logic and Communication):
 
-**`Dataset Purchase Module`**  
-- **ProcesadorPagoAPILambda:**  Initiates purchase.
-- **ServicioPasarelaPagoLambda:**  Encapsulates logic for Stripe Connect, SINPE API, and PayPal, using AWS KMS for encryption.
-- **StripeWebhookHandlerLambda:**  Validates and processes Stripe webhooks.
-- **GestorPermisosDatasetLambda:**  Assigns permissions in AWS Lake Formation or AWS IAM Identity Center after payment.
-- **RegistroTransaccionCompraDynamoDBLambda:**  Logs transactions in Amazon DynamoDB.
-- **DatasetPrivadoApprovalStepFunctions:**  (Optional) Orchestrates approvals for private datasets post-purchase.
+* **APIServiceClient (and specializations)**
 
-**`Dashboard and Data Exploration`(Backend Support)**  
-- **QuickSightEmbeddingServiceLambda:**  Generates secure URLs for embedding Amazon QuickSight, applying AWS Lake Formation permissions.
-- **ConsumoDatosTrackerServiceLambda:**  Tracks data usage (Amazon CloudWatch, Amazon DynamoDB).
-- **LimiteConsumoManagerLambda:**  Manages limit breaches (AWS WAF, AWS Lake Formation).
-- **HistorialConsumoQueryServiceLambda:**  Provides usage history (AWS CloudTrail, Amazon OpenSearch).
-- **ModeloAIDataProvisioningServiceLambda:**  Orchestrates controlled delivery of data to Amazon SageMaker models.
+  * **Responsibility**: Facade for communication with backend APIs (AppSync GraphQL/API Gateway REST). Includes interceptors to attach JWT tokens, handle common errors, and centralize base API URL.
 
-**`Backoffice Portal`(Backend Administration Logic)**  
-- **AdminUserManagementServiceLambda:**  Manages users/entities and roles (DynamoDB/RDS, AWS IAM Identity Center).
-- **KeyAdministrationServiceLambda:**  Orchestrates key and custodian management (AWS KMS, AWS Step Functions).
-- **DataIntegrationRuleEngineLambda:**  Manages data load rules (DynamoDB, AWS Glue, AWS Glue DataBrew).
-- **SystemMonitoringServiceLambda:**  Exposes CloudWatch metrics.
-- **AuditLogAccessServiceLambda:**  Queries CloudTrail/OpenSearch logs.
-- **ReportingGenerationServiceLambda:**  Generates reports using QuickSight.
-- **LegalComplianceServiceLambda:**  Extracts evidence with Amazon CloudTrail, queries AWS Artifact.
-- **ObjectVisibilityControlServiceLambda:**  Manages permissions with Lake Formation.
+* **AuthService (AWS Amplify Auth Wrapper)**
 
-**`Cross-cutting Notification Service`**  
-- **NotificationDispatcherLambda:**  Entry point, orchestrates sending.
-- **TemplateManagerModule (Lambda):**  Manages email templates from Amazon S3.
-- **EmailSenderServiceSESModule (Lambda):**  Uses Amazon SES to send emails.
-- **NotificationLoggerModule (Lambda):**  Logs sends (DynamoDB or CloudWatch Logs).
+  * **Responsibility**: Manages authentication lifecycle (login, signup, logout, tokens) with AWS Cognito. Updates global state (StateService) on changes.
+
+* **StateService (Implemented with React Query and Zustand)**
+
+  * **Responsibility**: React Query manages server state (fetching, caching, etc.). Zustand manages UI global state (user profile, roles, preferences, global loading state) through specific stores (e.g., `authStore`, `registroStore`).
+
+* **ConfigService**
+
+  * **Responsibility**: Loads and provides frontend configurations from environment variables or a config endpoint.
+
+* **FormValidationService (Using Yup)**
+
+  * **Responsibility**: Centralizes client-side form validation logic via reusable Yup schemas.
+
+* **NotificationUIManager**
+
+  * **Responsibility**: Manages UI notification/toast display (`NotificationToast`).
 
 ---
 
-#### Relevant Design Patterns
+### Relevant Design Patterns
 
-##### Creational Patterns
+#### Structural Patterns:
 
-- **Factory Method:** For instantiating specific processors or clients within Lambdas (e.g., different document validators, different payment gateway clients).
-- **Builder:** For constructing complex configuration objects or service requests with multiple parameters.
+* **Facade**: `APIServiceClient` simplifies backend calls. `AuthService` simplifies interaction with Amplify/Cognito. `QuickSightEmbeddedView` acts as a facade for the QuickSight SDK.
+* **Adapter**: Wrapper components for third-party UI libraries or to adapt the QuickSight Embedded SDK into a cohesive React component.
+* **Composite**: Complex views are built by nesting React components, forming a tree structure.
 
-##### Structural Patterns
+#### Behavioral Patterns:
 
-- **Facade:** Multiple service Lambdas act as facades to simplify interaction with underlying AWS services or complex flows. API Gateway/AppSync are the main backend facades.
-- **Adapter:** For interacting with third-party APIs (Stripe, SINPE, external validation APIs).
-- **Proxy:** API Gateway and AppSync act as proxies for Lambda functions.
-- **Decorator (via Lambda Layers or Middlewares):** To add cross-cutting concerns (logging, metrics) to Lambdas.
-    
-##### Behavioral Patterns
-
-- **Chain of Responsibility:**  For validation or authorization flows in API Gateway/AppSync or within Lambdas.
-- **Strategy:** To select algorithms or processors at runtime (e.g., different data cleaning strategies).
-- **State (AWS Step Functions):** Core for orchestrating stateful workflows (registration, document validation, ETDL).
-- **Command:** API requests and messages in queues (SQS)/topics (SNS) are treated as commands.
-- **Observer/Event-Driven (Amazon EventBridge, SNS, S3 Events, DynamoDB Streams):**  Central pattern for asynchronous communication and decoupling.
-- **Template Method:** Lambda functions or Glue scripts define skeletons for processes, allowing step customization.
-- **Saga (AWS Step Functions):** To manage consistency in distributed transactions.
-  
----
-
-#### Key Dependencies
-
-##### Internal:
-- Interdependence between Lambdas (synchronous or asynchronous).
-- AppSync resolvers/API Gateway handlers depend on business logic Lambdas.
-- Step Functions orchestrate Lambdas and AWS services.
-- Dependency on configuration and policies from the Central Security Component.
-
-##### External
-- **Frontend Layer:**  Main consumer of APIs (AppSync/API Gateway).
-- **Data Layer:** Critical dependency for persistence, metadata querying, and storage (S3, DynamoDB, RDS, Glue Data Catalog, Lake Formation, Neptune).
-- **Cloud Layer:** All mentioned AWS services are the infrastructure foundation for backend operations.
-- **Third-Party Layer:**  For payment gateways and external verification APIs.
-- **Protocols:**  HTTPS, GraphQL, REST, JSON, event formats.
-
-### Layer: Data (Storage and Persistence)
-
-#### Overview and Key Architectural Patterns
-
-The Data Layer is responsible for the physical persistence, secure and organized storage, cataloging, and governance of all information assets within the Data Pura Vida ecosystem. This spans from raw ingested data, to processed and transformed data in the Data Lake, to technical and business metadata, system configuration data, audit logs, and transactional data generated by platform operations. The storage strategy is based on the selective use of AWS services, optimized for different data types, access patterns, and performance requirements, with a strong emphasis on security, scalability, efficiency, and centralized governance.
-
-##### Main Technologies
-- **Data Lake Storage:** Amazon S3, Glue (Apache Iceberg) as a table format over S3
-- **Metadata Catalog:** AWS Glue Data Catalog
-- **NoSQL Databases:** Amazon DynamoDB
-- **Relational Databases:** Amazon RDS (PostgreSQL or MySQL)
-- **Graph Database:** Amazon Neptune (for relationships between datasets)
-- **Data Governance:** AWS Lake Formation
-- **Data Security (Encryption):** AWS KMS (Key Management Service)
-- **Secret Management (DB Credentials):** AWS Secrets Manager
-
-##### Key Architectural Patterns
-
-- **Data Lake Architecture:** Amazon S3 is used as the central repository for storing large volumes of data in various formats (raw, processed, curated). Glue (Apache Iceberg) is implemented over S3 to provide transactional table features (ACID), data and schema versioning, and efficient delta management.
-- **Polyglot Persistence:** Multiple database technologies are used, each optimized for different data types and access patterns (DynamoDB for transactional NoSQL, RDS for relational data, Neptune for graphs, S3/Iceberg for the data lake).
-- **Metadata-Driven Data Management:**  Heavy reliance on the AWS Glue Data Catalog to register, discover, and manage technical metadata of datasets stored in the Data Lake and other cataloged sources. Business and enriched metadata are additionally managed in DynamoDB or S3.
-- **Security by Design:** All data storage is encrypted at rest using AWS KMS. Fine-grained access control is managed through AWS IAM and AWS Lake Formation.
+* **Observer (via State Management - Zustand and React Query)**: Components subscribe to changes in Zustand stores or React Query results. Components update when data changes.
+* **State**: React components manage local state. `StateService` (Zustand) manages global states influencing UI behavior.
+* **Strategy**: `FormularioDinamicoRegistro` can employ strategies to render and validate different field types based on the form schema.
+* **Command**: User interactions triggering data mutations (e.g., form submissions) are handled by React Query, encapsulating execution logic, state, and retries.
 
 ---
 
-#### Main React Classes/Modules/Components and Their Responsibilities
+### Key Dependencies
 
-In this layer, "modules" mainly refer to the definition and structure of data storages, their schemas, and the AWS services managing them.
+#### Internal:
 
-##### 1. Data Lake Storage (Amazon S3 + Glue (Apache Iceberg)):
+* Between React components (nesting, composition).
+* Views/Pages depend on common components and frontend services (`APIServiceClient`, `AuthService`, `StateService`).
+* State management libraries (Zustand, React Query) and routing (React Router).
 
-**`S3BucketsDataLake` (Amazon S3 Configuration)**  
-- **Responsibility:**  Define the S3 bucket structure for the different zones of the Data Lake: Raw/Ingest Zone, Processed/Intermediate Zone, Curated/Modeled Zone.
-- **Configuration:**  Bucket policies, encryption (SSE-S3 or SSE-KMS), access logging, object versioning, lifecycle policies.
-  
-**`IcebergTables` (Glue with Apache Iceberg Definitions over S3)**  
-- **Responsibility:**  Define tables over S3 data using the Apache Iceberg format. Includes table schema, partitioning strategies, and Iceberg metadata management for versioning, schema evolution, and ACID transactions.
+#### External:
 
-##### 2. Metadata Catalog (AWS Glue Data Catalog):
-
-**`GlueCatalogDatabase` (Configuration in AWS Glue Data Catalog)**  
-- **Responsibility:**  Logical container for metadata tables describing datasets in the Data Lake.
-
-**`GlueTables` (Definitions in AWS Glue Data Catalog)**  
-- **Responsibility:**  Store technical metadata for each dataset (schema, data types, S3 location, format, partitions, statistics). Populated by Glue crawlers or dataset registration processes. It is the source for Glue ETDL, SageMaker, and Lake Formation.
-
-##### 3. Operational and Application Databases (Amazon DynamoDB, Amazon RDS):
-
-**`PendingRecordsTable` (Amazon DynamoDB)**  
-- **Responsibility:**  Store entity information during the registration process before final approval (status, form data).
-
-**`DocumentValidationTable` (Amazon DynamoDB)**  
-- **Responsibility:**  Store status and results of document validation (document ID, AI status, Textract results, manual review comments).
-
-**`DatasetConfigurationTable` (Amazon DynamoDB)**  
-- **Responsibility:**  Store user-defined configuration for each shared dataset (name, description, type, pricing model, access rules, etc.).
-
-**`EnrichedMetadataCatalogTable` (Amazon DynamoDB)**  
-- **Responsibility:**  Store descriptive, business, quality, and usage policy metadata for datasets, complementing the Glue Data Catalog. Used by the "Dataset Catalog".
-
-**`PurchaseTransactionsTable` (Amazon DynamoDB)**  
-- **Responsibility:**  Log all dataset purchase transactions.
-
-**`AccessSubscriptionsTable` (Amazon DynamoDB or Amazon RDS)**  
-- **Responsibility:**  Track user access to datasets (duration, consumption limits).
-
-**`BackofficeRelationalDatabase`(Amazon RDS - PostgreSQL/MySQL)**  
-- **Responsibility:**  Store structured and relational data for Backoffice operations that do not fit well in DynamoDB.
-
-**`MetadataAuditVersioningTable`(Amazon DynamoDB with Streams enabled)**  
-- **Responsibility:**  Capture element-level changes in critical DynamoDB tables (e.g., metadata, configurations) for auditing or state reconstruction.
-
-##### 4. Graph Database (Amazon Neptune):
-
-**`DatasetRelationshipGraph`(Amazon Neptune)**  
-- **Responsibility:**  Store and query complex relationships between datasets, columns, owning entities, and business concepts. Used for the functionality to “automatically relate to existing datasets.”
-
-##### 5. Secrets Storage (AWS Secrets Manager):
-
-**`SecretsManager`(Configuration in AWS Secrets Manager)**  
-- **Responsibility:**  Securely store database credentials, API keys for third-party services, and other secrets. Integrated with IAM for access control.
+* **Backend Layer (APIs - AWS AppSync/API Gateway)**: Critical dependency for all business operations and data access. Well-defined API contracts (GraphQL/OpenAPI) are required.
+* **AWS Amplify**: Auth (for Cognito), Storage (for S3), API (for AppSync/API Gateway).
+* **Amazon QuickSight**: Via QuickSight Embedded SDK.
+* **Stripe Elements**: For payment UI.
+* **Protocols**: HTTPS, GraphQL, REST, WSS (for AppSync subscriptions).
+* **NPM Libraries**: React, Next.js, Tailwind CSS, Zustand, React Query (TanStack Query), Yup, Axios (or similar HTTP client outside Amplify API), AWS SDKs.
 
 ---
 
-#### Relevant Design Patterns
+## Layer: Backend (Including Middlewares, Handlers, and Business Logic)
 
-- **Polyglot Persistence (Architectural):** Use of multiple data storage technologies optimized for their purpose.
-- **Data Lake (Architectural):** Use of S3 as a central storage, enhanced with table formats like Glue (Apache Iceberg).
-- **Metadata Catalog (Architectural):** Centralized data definition using AWS Glue Data Catalog.
-- **Repository/DAO (Implemented in Backend Layer):** The Backend Layer will use this pattern to abstract access logic to the different data sources defined in this Data Layer.
-- **Data Mapper (Implemented in Backend Layer):** To map business logic objects to database structures.
-- **CQRS (Command Query Responsibility Segregation – Advanced Consideration):** If some use cases require very different optimizations for reads and writes, data models may be separated, though this adds complexity. (Not explicitly in the stack, but an advanced data pattern).
-  
+## Overview and Key Architectural Patterns
+
+The Backend Layer is the operational and logical core of Data Pura Vida. It is responsible for executing all business logic, processing data, interacting with the Data Layer (persistence), managing communication with Third-Party Layer services, applying business rules and detailed security policies, and exposing robust, secure, and efficient APIs. These APIs are primarily consumed by the Frontend Layer and potentially by other authorized systems or services.
+
+The design is based on a serverless architecture, using AWS Lambda as the main computing platform. APIs are exposed via AWS AppSync (GraphQL) and/or Amazon API Gateway (RESTful). Complex workflow orchestration is managed with AWS Step Functions, and asynchronous, event-driven communication is implemented using Amazon EventBridge, Amazon SNS, and Amazon SQS.
+
+### Core Technologies:
+
+* Serverless Compute: AWS Lambda.
+* API Exposure: AWS AppSync (GraphQL), Amazon API Gateway (REST).
+* Workflow Orchestration: AWS Step Functions.
+* Messaging and Events: Amazon EventBridge, Amazon SNS, Amazon SQS.
+* AWS Services Integration:
+
+  * AI (SageMaker, Textract, Comprehend, Rekognition)
+  * Data (DynamoDB, S3, Glue, Athena, Lake Formation, Neptune)
+  * Security (Cognito, KMS, IAM, WAF, CloudHSM)
+
+### Key Architectural Patterns:
+
+* **Serverless Architecture**: Business logic resides in AWS Lambda functions, promoting scalability and reducing operational overhead.
+* **Microservices (Oriented)**: Specialized Lambda functions foster a modular design with high cohesion and low coupling, enabling independent development, deployment, and scaling.
+* **API-Driven**: Communication is based on well-defined API interfaces (GraphQL and REST).
+* **Event-Driven Architecture (EDA)**: Used for asynchronous communication, decoupling between services, and responding to business/system events (with EventBridge, SNS, SQS).
+* **Hexagonal Architecture (Ports and Adapters - Conceptual)**: For domain logic inside complex Lambdas, the core logic is isolated from external dependencies through clear interfaces (ports) and adapters, improving testability and flexibility.
+
+## Main Classes/Modules/Services and Their Responsibilities
+
+The following modules represent the specialized Lambda functions, AppSync resolvers, API Gateway configurations, and Step Functions workflows that compose the Backend Layer logic, grouped by the main functionality they serve in Data Pura Vida.
+
+### 1. API Interface Sub-Layer (Backend Entry Point)
+
+* **AppSyncGraphQLService (AWS AppSync)**
+
+  * Exposes the main GraphQL API for the frontend. Defines the GraphQL schema. Integrates with AWS Cognito for auth and invokes Lambda functions as resolvers.
+* **APIGatewayRESTService (Amazon API Gateway)**
+
+  * Exposes RESTful endpoints for specific functionalities or third-party integrations. Integrates with AWS WAF, AWS Cognito, and invokes Lambda functions.
+
+### 2. Business Logic and Orchestration by Core Functionality
+
+#### Entity Registration Module:
+
+* **RegistroRequestHandlerLambda**: Orchestrates the backend registration flow, validates, interacts with GestorFormulariosServiceLambda, invokes document validation and persistence. Uses AWS Lambda.
+* **GestorFormulariosServiceLambda**: Provides structure and rules for dynamic forms (from JSON Schema in AppSync or DynamoDB).
+* **ServicioValidacionDatosEntradaLambda**: Performs advanced business validations.
+* **ServicioPersistenciaRegistroLambda**: Saves registration info and status in Amazon DynamoDB.
+* **OrquestadorFlujoRegistroStepFunctions**: Manages async registration flow, including AI validation and manual review.
+
+#### AI Document Validation Module:
+
+* **OrquestadorValidacionDocumentoStepFunctions**: Orchestrates the document validation pipeline.
+* **ServicioExtraccionDatosTextractLambda**: Uses Amazon Textract for OCR and data extraction.
+* **ServicioClasificacionDocumentoComprehendSageMakerLambda**: Uses a model trained with Amazon SageMaker to classify document types.
+* **ServicioVerificacionContenidoSageMakerLambda**: Applies business rules and SageMaker models to verify information, format, and detect inconsistencies.
+* **ServicioValidacionFirmasDigitalesKMSLambda**: Verifies digital signatures using AWS KMS and AWS Signer.
+* **ServicioConsultaFuentesExternasLambda**: Connects to external APIs (via API Gateway) for validations.
+* **RegistroEstadoValidacionDynamoDBModule**: Stores and updates validation process status in DynamoDB.
+
+#### Central Security Component (Backend Implementation):
+
+* **CognitoTriggerLambda**: Lambda triggers for AWS Cognito to customize auth flows.
+* **RekognitionBiometricServiceLambda**: Encapsulates biometric verification and liveness check logic using Amazon Rekognition.
+* **KeyManagementCoordinatorLambda**: Orchestrates key management operations for tripartite custody (AWS KMS, CloudHSM, Secrets Manager).
+* **WAFRuleManagerLambda**: Dynamically updates AWS WAF rules.
+* **SecurityAuditProcessingLambda**: Processes AWS CloudTrail logs.
+
+#### Dataset Management by User Module:
+
+* **DatasetUploadHandlerLambda**: Manages file upload to S3 or external connection setup (credentials in AWS Secrets Manager).
+* **MetadataExtractionServiceLambda**: Uses AWS Glue DataBrew to suggest metadata.
+* **DatasetConfigurationServiceLambda**: Stores dataset configuration in DynamoDB.
+* **DatasetLifecycleManagerLambda**: Manages availability, recurring/delta loads, using EventBridge and SNS/API Gateway for callbacks.
+* **ETDLOrchestratorTriggerLambda**: Triggers the ETDL pipeline in the Data Lake.
+* **DatasetAccessPolicyManagerLambda**: Translates access settings into Lake Formation/IAM policies.
+
+#### Data Lake Core and Backend Data Processing:
+
+* **GlueETDLJobs (PySpark/Scala on AWS Glue)**: Core ETDL logic.
+* **SageMakerProcessingPipelines**: For ML tasks in the ETDL (e.g., deduplication with SageMaker).
+* **DataLakeOrchestrationStepFunctions**: Orchestrates Glue Jobs, SageMaker Jobs, and Lambdas in ETDL pipelines.
+* **DeltaLoadProcessorLambda**: Processes delta loads (identified with Glue).
+* **LakeFormationAdminServiceLambda**: Programmatic permissions admin for Lake Formation.
+
+#### Dataset Catalog:
+
+* **DatasetSearchServiceLambda**: Processes search/filter (via Glue Data Catalog using Athena and DynamoDB), applying Lake Formation visibility.
+* **DatasetDetailServiceLambda**: Fetches combined info from Glue Data Catalog, DynamoDB, and S3.
+
+#### Dataset Purchase Module:
+
+* **ProcesadorPagoAPILambda**: Initiates the purchase.
+* **ServicioPasarelaPagoLambda**: Encapsulates logic for Stripe Connect, SINPE API, and PayPal, using AWS KMS for encryption.
+* **StripeWebhookHandlerLambda**: Validates and processes Stripe webhooks.
+* **GestorPermisosDatasetLambda**: Assigns permissions in Lake Formation.
+* **RegistroTransaccionCompraDynamoDBLambda**: Logs transactions in DynamoDB.
+* **DatasetPrivadoApprovalStepFunctions**: Orchestrates private dataset approvals post-payment.
+
+#### Dashboard and Data Exploration (Backend Support):
+
+* **QuickSightEmbeddingServiceLambda**: Generates secure Amazon QuickSight embed URLs, applying Lake Formation permissions.
+* **ConsumoDatosTrackerServiceLambda**: Tracks data consumption (CloudWatch, DynamoDB).
+* **LimiteConsumoManagerLambda**: Manages limit overages (WAF, Lake Formation).
+* **HistorialConsumoQueryServiceLambda**: Provides usage history (CloudTrail, OpenSearch).
+* **ModeloAIDataProvisioningServiceLambda**: Orchestrates controlled data delivery to SageMaker models.
+
+#### Backoffice Portal (Backend Admin Logic):
+
+* **AdminUserManagementServiceLambda**: Manages users/entities and roles (DynamoDB/RDS, IAM Identity Center).
+* **KeyAdministrationServiceLambda**: Orchestrates key and custodian management (KMS, CloudHSM, Step Functions).
+* **DataIntegrationRuleEngineLambda**: Manages ingestion rules (DynamoDB, Glue, DataBrew).
+* **SystemMonitoringServiceLambda**: Exposes CloudWatch metrics.
+* **AuditLogAccessServiceLambda**: Queries CloudTrail logs.
+* **ReportingGenerationServiceLambda**: Generates reports with QuickSight.
+* **LegalComplianceServiceLambda**: Extracts evidence from CloudTrail.
+* **ObjectVisibilityControlServiceLambda**: Manages permissions with Lake Formation.
+
+#### Cross-Cutting Notification Service:
+
+* **NotificationDispatcherLambda**: Entry point, orchestrates sending.
+* **TemplateManagerModule (Lambda)**: Manages email templates from S3.
+* **EmailSenderServiceSESModule (Lambda)**: Interacts with Amazon SES to send emails.
+* **NotificationLoggerModule (Lambda)**: Logs sends in DynamoDB.
+
+## Relevant Design Patterns
+
+### Creational Patterns:
+
+* **Factory Method**: To instantiate specific processors or clients within Lambdas (e.g., different document validators, payment gateway clients).
+* **Builder**: To build complex config objects or AWS service requests.
+
+### Structural Patterns:
+
+* **Facade**: Service Lambdas act as facades simplifying interactions with AWS services or workflows. API Gateway/AppSync are the main facade.
+* **Adapter**: For integration with third-party APIs (Stripe, SINPE, external validation).
+* **Proxy**: API Gateway and AppSync act as proxies for Lambda functions.
+* **Decorator (via Lambda Layers or Middlewares)**: Adds cross-cutting features (logging, metrics) to Lambdas.
+
+### Behavioral Patterns:
+
+* **Chain of Responsibility**: For validation or authorization flows in API Gateway/AppSync or inside Lambdas.
+* **Strategy**: To select processors or algorithms at runtime (e.g., different data cleaning strategies).
+* **State (AWS Step Functions)**: Fundamental for orchestrating stateful workflows (registration, document validation, ETDL).
+* **Command**: API requests and queue/topic messages can be treated as commands.
+* **Observer/Event-Driven**: Central pattern for async communication and decoupling (EventBridge, SNS, S3 Events, DynamoDB Streams).
+* **Template Method**: Lambda functions or Glue scripts define skeleton processes allowing step customization.
+* **Saga (AWS Step Functions)**: For managing consistency in distributed transactions.
+
+## Key Dependencies
+
+### Internal (within the Backend Layer):
+
+* Interdependence between Lambdas (sync or async).
+* AppSync resolvers/API Gateway handlers depend on business logic Lambdas.
+* Step Functions orchestrate Lambdas and AWS services.
+* Dependency on the Central Security Component's config and policies.
+
+### External:
+
+* **Frontend Layer**: Main API consumer (AppSync/API Gateway).
+* **Data Layer**: Critical for persistence, metadata querying, and storage (S3, DynamoDB, RDS, Glue Data Catalog, Lake Formation, Neptune).
+* **Cloud Layer**: All mentioned AWS services are the infrastructure supporting the backend.
+* **Third-Party Layer**: For payment gateways and external verification APIs.
+* **Protocols**: HTTPS, GraphQL, REST, JSON, event formats.
+
 ---
 
-#### Key Dependencies
+## Data Layer: Storage and Persistence
 
-##### Internal:
-- Iceberg Tables depend on the configuration of S3 Buckets.
-- Glue Tables in the Data Catalog describe data in S3/Iceberg and other sources.
-- AWS Lake Formation uses the Glue Data Catalog to apply permissions.
+### Overview and Key Architectural Patterns
 
-##### External
-- **Backend Layer:**  Main producer and consumer of this layer. All Lambda functions and backend services needing to persist or query data interact with this layer’s services (S3, DynamoDB, RDS, Neptune, Glue Catalog, Lake Formation) via their SDKs.
-- **Core Data Lake and Backend Processing (Subset of Backend):** AWS Glue and Amazon SageMaker jobs read from and write to S3/Iceberg, and update/query the Glue Data Catalog.
-- **Central Security Component:**
-    - AWS KMS is essential for encryption at rest across all storage.
-    - AWS IAM and AWS Lake Formation (configured and managed by the Security Component) control access to this layer’s resources.
-    - AWS Secrets Manager is used by the backend layer to obtain credentials for accessing databases in this layer.
-- **Backoffice Portal:**  May have management or direct/indirect query access (through backend APIs) to some storages for auditing, configuration, or visualization.
-- **Protocols:**  The Data Layer is accessed through the specific protocols of each storage service (S3 API, DynamoDB API, SQL over TCP/IP for RDS, SPARQL/Gremlin for Neptune).
+The Data Layer is responsible for the physical persistence, secure and organized storage, cataloging, and governance of all information assets within the Data Pura Vida ecosystem. This includes everything from raw ingested data, to processed and transformed data in the Data Lake, as well as technical and business metadata, system configuration data, audit logs, and transactional data generated by the platform's operations. The storage strategy is based on selective use of AWS services, optimized for different data types, access patterns, and performance requirements, with strong emphasis on security, scalability, efficiency, and centralized governance.
 
+### Core Technologies (Stack):
 
-### Layer: Third-Party Services (Integrations with External Services)
+* **Data Lake Storage**: Amazon S3, AWS Glue (uses Apache Iceberg as table format over S3).
+* **Metadata Catalog**: AWS Glue Data Catalog.
+* **NoSQL Databases**: Amazon DynamoDB.
+* **Relational Databases**: Amazon RDS (PostgreSQL or MySQL).
+* **Graph Database**: Amazon Neptune (for relationships between datasets).
+* **Data Governance**: AWS Lake Formation.
+* **Data Security (Encryption)**: AWS KMS (Key Management Service).
+* **Secrets Management (DB Credentials)**: AWS Secrets Manager.
 
-#### Overview and Key Architectural Patterns
+### Key Architectural Patterns:
 
-The "Third-Party" layer encompasses the software components and configurations dedicated to securely, robustly, and decoupledly interacting with external services essential for the functionalities of Data Pura Vida. These integrations include payment gateways, identity or data verification APIs, and potentially other specialized services such as advanced secret management systems or external Hardware Security Modules (HSMs). The design of this layer prioritizes secure communication (encryption, authentication), comprehensive error and timeout handling, isolation to minimize the impact of third-party unavailability, and continuous monitoring of integration health.
+* **Data Lake Architecture**: Amazon S3 is used as the central repository to store large volumes of data in various formats (raw, processed, curated). Through AWS Glue, Apache Iceberg is implemented over S3 to provide transactional table functionality (ACID), data versioning and schema evolution, and efficient delta management.
+* **Polyglot Persistence**: Multiple database technologies are used, each optimized for different data types and access patterns (DynamoDB for transactional NoSQL, RDS for relational data, Neptune for graphs, S3/Iceberg for the data lake).
+* **Metadata-Driven Data Management**: Strong reliance on AWS Glue Data Catalog to register, discover, and manage the technical metadata of datasets stored in the Data Lake and other cataloged sources. Business and enriched metadata are additionally managed in DynamoDB or S3.
+* **Security by Design**: Encryption at rest is applied to all data storage using AWS KMS. Granular access control is managed via AWS IAM and AWS Lake Formation.
 
-##### Identified Key Third-Party Services
+---
+
+### Main Classes/Modules/Data Structures and Their Responsibilities
+
+In this layer, "modules" primarily refer to the definition and structure of data storages, their schemas, and the AWS services that manage them.
+
+#### 1. Data Lake Storage (Amazon S3 + Apache Iceberg)
+
+* **S3BucketsDataLake (Amazon S3 Configuration)**
+
+  * **Responsibility**: Define the structure of S3 buckets for the different zones of the Data Lake: Raw/Ingest Zone, Processed/Intermediate Zone, Curated/Modeled Zone.
+  * **Configuration**: Bucket policies, encryption (SSE-S3 or SSE-KMS), access logging, object versioning, lifecycle policies.
+
+* **TablasIceberg (Apache Iceberg Definitions over S3)**
+
+  * **Responsibility**: Define tables over data in S3 using the Apache Iceberg format. Includes table schema, partitioning strategies, and Iceberg metadata management for versioning, schema evolution, and ACID transactions.
+
+#### 2. Metadata Catalog (AWS Glue Data Catalog)
+
+* **BaseDeDatosGlueCatalogo (AWS Glue Data Catalog Configuration)**
+
+  * **Responsibility**: Logical container for metadata tables describing the datasets in the Data Lake.
+
+* **TablasGlue (Definitions in AWS Glue Data Catalog)**
+
+  * **Responsibility**: Store technical metadata for each dataset (schema, data types, S3 location, format, partitions, statistics). Populated by Glue crawlers or dataset registration processes. Serves as source for Athena, Glue ETL, SageMaker, and Lake Formation.
+
+#### 3. Operational and Application Databases (Amazon DynamoDB, Amazon RDS)
+
+* **TablaRegistrosPendientes (Amazon DynamoDB)**
+
+  * **Responsibility**: Store entity information during the registration process before final approval (status, form data).
+
+* **TablaValidacionDocumentos (Amazon DynamoDB)**
+
+  * **Responsibility**: Store the status and results of each document validation (document ID, AI status, Textract/Comprehend results, manual review comments).
+
+* **TablaConfiguracionDatasets (Amazon DynamoDB)**
+
+  * **Responsibility**: Store user-defined configuration for each shared dataset (name, description, type, pricing model, access rules, etc.).
+
+* **TablaMetadatosEnriquecidosCatalogo (Amazon DynamoDB)**
+
+  * **Responsibility**: Store descriptive, business, quality, and usage policy metadata for datasets, complementing the Glue Data Catalog. Used by the "Dataset Catalog".
+
+* **TablaTransaccionesCompra (Amazon DynamoDB)**
+
+  * **Responsibility**: Record all dataset purchase transactions.
+
+* **TablaSuscripcionesAcceso (Amazon DynamoDB or Amazon RDS)**
+
+  * **Responsibility**: Maintain user access records to datasets (duration, consumption limits).
+
+* **BaseDeDatosRelacionalBackoffice (Amazon RDS - PostgreSQL/MySQL)**
+
+  * **Responsibility**: Store structured and relational data for Backoffice operations that do not fit well in DynamoDB.
+
+* **TablaVersionamientoAuditoriaMetadatos (Amazon DynamoDB with Streams Enabled)**
+
+  * **Responsibility**: Capture element-level changes in critical DynamoDB tables (e.g., metadata, configurations) for auditing or state reconstruction.
+
+#### 4. Graph Database (Amazon Neptune)
+
+* **GrafoRelacionesDatasets (Amazon Neptune)**
+
+  * **Responsibility**: Store and query complex relationships between datasets, columns, owning entities, and business concepts. Used for the functionality of "automatically relating to existing datasets".
+
+#### 5. Secrets Storage (AWS Secrets Manager)
+
+* **GestorSecretos (AWS Secrets Manager Configuration)**
+
+  * **Responsibility**: Securely store database credentials, API keys for third-party services, and other secrets. Integrated with IAM for access control.
+
+---
+
+### Relevant Design Patterns
+
+* **Polyglot Persistence (Architectural)**: Use of multiple data storage technologies optimized for their purpose.
+* **Data Lake (Architectural)**: Use of S3 as central storage, enhanced with table formats like Apache Iceberg.
+* **Metadata Catalog (Architectural)**: Centralization of data definitions with AWS Glue Data Catalog.
+* **Repository/DAO (Implemented in Backend Layer)**: The Backend layer uses this pattern to abstract access logic to the different data sources defined in this Data Layer.
+* **Data Mapper (Implemented in Backend Layer)**: To map business logic objects to database structures.
+* **CQRS (Command Query Responsibility Segregation - Advanced Consideration)**: If some use cases require very different optimizations for reads and writes, separating the data models could be considered, although this adds complexity. (Not explicitly in the stack, but an advanced data pattern.)
+
+---
+
+### Key Dependencies
+
+**Internal (within the Data Layer):**
+
+* Iceberg Tables depend on the configuration of S3 Buckets.
+* Glue Tables in the Data Catalog describe data in S3/Iceberg and other sources.
+* AWS Lake Formation uses the Glue Data Catalog to apply permissions.
+
+**External:**
+
+* **Backend Layer**: The main producer and consumer of this layer. All Lambda functions and backend services needing to persist or query information interact with this layer's services (S3, DynamoDB, RDS, Neptune, Glue Catalog, Lake Formation) via their SDKs.
+* **Core of the Data Lake and Backend Processing (Subset of Backend)**: AWS Glue and Amazon SageMaker jobs read from and write to S3/Iceberg and update/query the Glue Data Catalog.
+* **Security Core Component**:
+
+  * AWS KMS is essential for encryption at rest for all storages.
+  * AWS IAM and AWS Lake Formation (configured and managed by the Security Component) control access to this layer's resources.
+  * AWS Secrets Manager is used by the Backend layer to obtain credentials to access the databases in this layer.
+* **Backoffice Portal**: May have direct or indirect management or query access (via Backend APIs) to certain storages for auditing, configuration, or visualization.
+* **Protocols**: The Data Layer is accessed through the specific protocols of each storage service (S3 API, DynamoDB API, SQL over TCP/IP for RDS, SPARQL/Gremlin for Neptune).
+
+---
+
+# Third-Party Layer (Integrations with External Services)
+
+## Overview and Key Architectural Patterns
+
+The "Third-Party" layer encompasses the software components and configurations dedicated to securely, robustly, and decoupledly interacting with external services essential for the functionalities of Data Pura Vida. These integrations include payment gateways, identity or data verification APIs, and potentially other specialized services such as advanced secret management systems or external Hardware Security Modules (HSMs). The design of this layer prioritizes secure communication (encryption, authentication), comprehensive error and timeout handling, isolation to minimize the impact of third-party unavailability, and continuous health monitoring of these integrations.
+
+### Key Identified Third-Party Services:
 
 - **Payment Gateways:**
-    - Stripe Connect (for credit/debit cards)
-    - Costa Rica’s SINPE API (for IBAN transfers or national payments)
-    - PayPal (optional, via PayPal REST API)
-- **External Verification APIs:** Government or identity verification APIs (not specified, to be accessed via API Gateway + Lambda).
-- **External HSM (for Tripartite Custody):** As part of the tripartite custody system, a key may reside in an external HSM.
+  - Stripe Connect (for credit/debit cards)  
+  - Costa Rica SINPE API (for IBAN transfers or national payments)  
+  - PayPal (optional, via PayPal REST API)  
 
-##### Key Architectural Patterns
+- **External Verification APIs:**  
+  Government or identity verification APIs (unspecified, accessed via API Gateway + Lambda).  
 
-- **Anti-Corruption Layer (ACL):** An abstraction layer (via adapters) will be implemented between the Data Pura Vida domain model and the APIs/models of external services. This isolates the system from changes or quirks in external APIs.
-- **Circuit Breaker:** For critical and synchronous integrations, this pattern will be applied to prevent third-party service failures from causing cascading failures. It allows for fast failure or fallback routing if the external service fails or is unresponsive.
-- **API Gateway as Proxy/Facade to Third-Parties (Selective):**  Amazon API Gateway can be used as a secure and managed proxy to certain third-party APIs, centralizing access control, caching (if applicable), and monitoring for specific interactions.
-- **Asynchronous Communication:** For non-real-time or long-duration interactions with third-party services, asynchronous communication will be preferred (e.g., enqueueing the request in Amazon SQS to be processed by a Lambda) to improve system resilience and performance.
+- **External HSM (for Tripartite Custody):**  
+  As part of the tripartite custody system, a key may reside in an external HSM (AWS CloudHSM operating in dedicated mode).  
+
+### Key Architectural Patterns:
+
+- **Anti-Corruption Layer (ACL):**  
+  An abstraction layer (via adapters) will be implemented between Data Pura Vida’s domain model and the third-party APIs/models. This isolates the system from changes or quirks of external APIs.
+
+- **Circuit Breaker:**  
+  For critical synchronous integrations, this pattern will be applied to prevent failures in a third-party service from cascading. It enables fast failure or fallback redirection if the external service is unresponsive or repeatedly fails.
+
+- **API Gateway as Proxy/Facade to Third Parties (Selective):**  
+  Amazon API Gateway may be used as a secure, managed proxy to certain third-party APIs, centralizing access control, caching (if applicable), and monitoring for those specific interactions.
+
+- **Asynchronous Communication:**  
+  For non-real-time or long-duration interactions with third-party services, asynchronous communication is preferred (e.g., enqueue requests in Amazon SQS processed by Lambda) to improve system resilience and performance.
 
 ---
 
-#### Main React Classes/Modules/Components and Their Responsibilities
+## Main Classes/Modules/Adapters and Their Responsibilities
 
-These modules represent the software components (mainly AWS Lambda functions) that encapsulate the interaction logic with each third-party service, acting as adapters.
+These modules represent the software components (primarily AWS Lambda functions) encapsulating the interaction logic with each third-party service, acting as adapters.
 
-##### 1. Payment Gateway Integration Module (Primarily used by the "Dataset Purchase Module" in the Backend Layer):
+### 1. Payment Gateway Integration Module (Primarily used by the "Dataset Purchase Module" in the Backend Layer)
 
-**`StripePaymentAdapter` (Lambda Function or Lambda Module)**  
-- **Responsibility:**  Encapsulates all logic for interacting with the Stripe Connect API. Handles creation of payment intents, card payment processing, subscription management (if applicable), and secure processing of Stripe webhooks for status updates.
-- **Technologies:**  AWS Lambda, Stripe official SDK.
-  
-**`SinpePaymentAdapter` (Lambda Function or Lambda Module)**  
-- **Responsibility:**  Encapsulates logic for interacting with the Costa Rica SINPE API or corresponding banking APIs for processing transfers or national payments.
-- **Technologies:**  AWS Lambda, secure HTTP libraries to interact with SINPE.
+- **StripePaymentAdapter (Lambda Function or module in Lambda)**  
+  Responsibility: Encapsulates all interaction logic with the Stripe Connect API. Creation of payment intents, card payment processing, subscription handling (if applicable), and secure processing of Stripe webhooks for status updates.  
+  Technologies: AWS Lambda, official Stripe SDK.
 
-**`PayPalPaymentAdapter` (Lambda Function or Lambda Module – if implemented)**  
-- **Responsibility:**  Encapsulates logic for interacting with the PayPal REST API for payment processing.
-- **Technologies:**  AWS Lambda, PayPal official SDK or HTTP libraries.
+- **SinpePaymentAdapter (Lambda Function or module in Lambda)**  
+  Responsibility: Encapsulates logic interacting with the Costa Rica SINPE API or relevant banking APIs to process transfers or national payments.  
+  Technologies: AWS Lambda, secure HTTP libraries for SINPE interaction.
 
-**`PaymentGatewayFacade` (Module in the Backend Layer)**  
-- **Responsibility:**  hough residing in the Backend, it coordinates usage of payment adapters. Provides a unified interface to the "Dataset Purchase Module" for interacting with different gateways, selecting the appropriate one.
+- **PayPalPaymentAdapter (Lambda Function or module in Lambda – if implemented)**  
+  Responsibility: Encapsulates interaction logic with PayPal’s REST API for payment processing.  
+  Technologies: AWS Lambda, official PayPal SDK or HTTP libraries.
 
-##### 2. External Verification API Integration Module (Primarily used by the "AI-Powered Document Validation Module" in the Backend Layer):
+- **PaymentGatewayFacade (Module in Backend Layer)**  
+  Responsibility: Although residing in the Backend, it coordinates the use of payment adapters. Provides a unified interface to the "Dataset Purchase Module" to interact with different gateways, selecting the appropriate one.
 
-**`ExternalVerificationAPIAdapterManager` (Lambda Function or set of Lambdas)**  
-- **Responsibility:**  Encapsulates communication logic with various external APIs for data validation (e.g., identity verification, business registration check, tax number validity). Designed to be extensible to support multiple verification APIs.
-- **Technologies:**  AWS Lambda, Amazon API Gateway (can act as outgoing proxy or to expose these adapters internally). Credentials are managed via AWS Secrets Manager.
+### 2. External Verification APIs Integration Module (Primarily used by the "AI Document Validation Module" in the Backend Layer)
 
-##### 3. External HSM Interaction Module (for Tripartite Custody)(Primarily used by the "Central Security Component" in the Backend Layer):
+- **ExternalVerificationAPIAdapterManager (Lambda Function or set of Lambdas)**  
+  Responsibility: Encapsulates communication logic with various external APIs for data validation (e.g., personal identity, company existence, tax number validity). Designed to be extensible to support multiple verification APIs.  
+  Technologies: AWS Lambda, Amazon API Gateway (can act as outbound proxy or to internally expose these adapters). Credentials managed with AWS Secrets Manager.
 
-**`ExternalHSMCommunicationService` (Lambda Function or specialized library)**  
-- **Responsibility:**  Manages secure communication with SecretsManager (if used for one key in tripartite custody). This involves specific HSM protocols and authentication mechanisms.
-- **Technologies:**  AWS Lambda (with VPC connectivity), vendor-provided client libraries.
+### 3. External HSM Interaction Module (for Tripartite Custody) (Primarily used by the "Central Security Component" in the Backend Layer)
 
-**`HashiCorpVaultClientAdapter` (Lambda Function or client library)**  
-- **Responsibility:**  Encapsulates interaction with a SecretsManager Vault instance for advanced secret management, if this technology is selected.
-- **Technologies:**  AWS Lambda, HTTP client for Vault or Vault SDK.
-  
+- **ExternalHSMCommunicationService (Lambda Function or specialized library)**  
+  Responsibility: Manages secure communication with an HSM other than AWS CloudHSM (if one is used for part of the tripartite key). This involves specific HSM protocols and authentication mechanisms. If AWS CloudHSM is used, interaction is via AWS APIs but requires specific network (VPC) configuration.  
+  Technologies: AWS Lambda (with VPC connectivity), AWS CloudHSM.
+
 ---
 
-#### Relevant Design Patterns
+## Relevant Design Patterns
 
-##### Creational Patterns
+### Creational Patterns:
+- **Factory Method (or Abstract Factory):**  
+  The PaymentGatewayFacade (in the Backend) may use this pattern to create instances of the correct payment adapter (StripePaymentAdapter, SinpePaymentAdapter) based on configuration or payment method.
 
-- **Factory Method:** `PaymentGatewayFacade` (in the backend layer) could use this pattern to create the correct payment adapter instance (StripePaymentAdapter, SinpePaymentAdapter) depending on configuration or selected payment method.
+### Structural Patterns:
+- **Adapter:**  
+  Fundamental pattern in this layer. Each XyzAdapter converts the third-party API’s specific interface into a standardized interface usable by the Data Pura Vida system.
 
-##### Structural Patterns
+- **Facade:**  
+  Modules like PaymentGatewayFacade (Backend, using these adapters) simplify interactions with the payments subsystem. An ExternalSystemInteractionFacade could aggregate multiple verification adapters.
 
-- **Adapter:** The foundational pattern of this layer. Each `XyzAdapter` converts a specific third-party API interface into a standardized interface usable by the Data Pura Vida system.
-- **Facade:** Modules like `PaymentGatewayFacade` (in the backend using these adapters) simplify interaction with the payment subsystem. An `ExternalSystemInteractionFacade` could group multiple verification adapters.
-- **Proxy:** Amazon API Gateway can act as a proxy for outgoing calls to certain third-party APIs, adding a management layer (logging, caching, basic transformation).
+- **Proxy:**  
+  Amazon API Gateway can act as a proxy for outgoing calls to some third-party APIs, adding a management layer (logging, caching, basic transformation).
 
-##### Behavioral Patterns
+### Behavioral Patterns:
+- **Strategy:**  
+  If multiple providers offer similar services (e.g., different APIs for the same type of data verification), the Strategy pattern can be used to dynamically select the provider or adapter implementation.
 
-- **Strategy:** If multiple providers offer similar services (e.g., different APIs for the same type of data verification), the Strategy pattern can be used to dynamically select the provider or adapter implementation.
-- **Circuit Breaker:** Implemented within the logic of the adapters or in the Lambda functions that use them, to protect Data Pura Vida from third-party unavailability or high latency.
-- **Retry (with Exponential Backoff and Jitter):** An essential mechanism in adapters to retry calls to third-party services that may experience transient failures.
-- **Command:**  Requests to third-party services—especially asynchronous or requiring compensation—could be encapsulated as Command objects.
-- **Anti-Corruption Layer (ACL) (Architectural Principle):** The adapters are the primary manifestation of this principle, creating a barrier that isolates the Data Pura Vida core system from the specifics and models of external systems.
-  
+- **Circuit Breaker:**  
+  Implemented in adapter logic or Lambda functions that use them, to protect Data Pura Vida from third-party service unavailability or high latency.
+
+- **Retry (with Exponential Backoff and Jitter):**  
+  Essential mechanism in adapters to retry calls to third-party services experiencing transient failures.
+
+- **Command:**  
+  Requests to third-party services, especially asynchronous or requiring compensation, may be encapsulated as Command objects.
+
+- **Anti-Corruption Layer (ACL) (Architectural Principle):**  
+  Adapters are the main manifestation of this principle, creating a barrier isolating the core Data Pura Vida system from external system details and models.
+
 ---
 
-#### Key Dependencies
+## Key Dependencies
 
-##### Internal (within the Third-Party Layer):
-- Specific adapters are generally independent from each other but should follow a consistent design.
+### Internal (within Third-Party Layer):
+- Specific adapters are generally independent from each other but must have consistent design.
 
-##### External
-- **Backend Layer:**  The main consumer of the services offered by this layer (via adapters).
-    - The "Dataset Purchase Module" depends on the payment gateway adapters.
-    - The "AI-Powered Document Validation Module" depends on external verification adapters.
-    - The "Central Security Component" depends on adapters for External HSM
-- **Third-Party Services (actual APIs and systems):** Stripe API, SINPE API, PayPal API, specific verification APIs, HSM.
-- **Cloud Layer (AWS Services):**
-    - AWS Lambda: Where the adapter logic resides.
-    - Amazon API Gateway: May be used as an outgoing proxy or to internally expose adapters.
-    - AWS Secrets Manager: Essential for securely storing access credentials to third-party services.
-    - Amazon SQS/SNS/EventBridge: For managing asynchronous interactions with third-party services.
-    - Amazon CloudWatch: For monitoring the health, performance, and errors of integrations.
-    - AWS KMS: To encrypt sensitive data in transit to/from third parties or temporary credentials.
-- **Protocols:**  HTTPS (mandatory for all external communications), REST, SOAP (if any third-party requires it), third-party specific data formats (JSON, XML).
+### External:
+- **Backend Layer (Data Pura Vida):**  
+  The main consumer of the services offered by this layer (via adapters).  
+  - The "Dataset Purchase Module" depends on payment gateway adapters.  
+  - The "AI Document Validation Module" depends on external verification API adapters.  
+  - The "Central Security Component" depends on external HSM adapters.
 
+- **Third-Party Services (the external APIs and systems themselves):**  
+  Stripe API, SINPE API, PayPal API, specific verification APIs, HSM.
 
-### Layer: Cloud (Infrastructure and Cloud Services as a Platform)
+- **Cloud Layer (AWS Services):**  
+  - AWS Lambda: where adapter logic resides.  
+  - Amazon API Gateway: can be used as outbound proxy or to expose adapters internally.  
+  - AWS Secrets Manager: essential for securely storing third-party service credentials.  
+  - Amazon SQS/SNS/EventBridge: for managing asynchronous interactions with third parties.  
+  - Amazon CloudWatch: for monitoring health, performance, and errors of integrations.  
+  - AWS KMS: to encrypt sensitive data in transit to/from third parties or for temporary credentials.
 
-#### Overview and Key Architectural Patterns
+- **Protocols:**  
+  HTTPS (mandatory for all external communications), REST, SOAP (if required by some third party), third-party API-specific data formats (JSON, XML).
 
-The Cloud Layer encompasses the underlying infrastructure and platform services provided by Amazon Web Services (AWS), upon which the Data Pura Vida ecosystem is built and operated. This layer’s design focuses on the selection, configuration, and orchestration of these services to meet the system’s scalability, high availability, security, performance, and cost optimization requirements. Extensive use of managed AWS services is prioritized to minimize operational burden, maximize agility, and leverage best practices inherent to cloud environments.
+---
 
-##### Primary Cloud Provider: Amazon Web Services (AWS)
+# Cloud Layer (Infrastructure and Cloud Platform Services)
 
-##### Key Architectural Patterns
+## Overview and Key Architectural Patterns
 
-- **Infrastructure as Code (IaC):** All cloud infrastructure (VPCs, subnets, load balancers, IAM roles, service configurations, etc.) will be defined and managed as code using tools like AWS CloudFormation, AWS CDK, or Terraform. This ensures automation, consistency, versioning, and environment reproducibility.
+The Cloud Layer comprises the underlying infrastructure and platform services provided by Amazon Web Services (AWS) on which the Data Pura Vida ecosystem is built and operated. The design of this layer focuses on the selection, configuration, and orchestration of these services to meet the system's scalability, high availability, security, performance, and cost optimization requirements. Extensive use of AWS managed services is prioritized to minimize operational burden, maximize agility, and leverage cloud best practices.
+
+**Primary Cloud Provider:** Amazon Web Services (AWS).
+
+### Key Principles and Architectural Patterns
+
+- **Infrastructure as Code (IaC):** All cloud infrastructure (VPCs, subnets, load balancers, IAM roles, service configurations, etc.) will be defined and managed as code using tools such as AWS CloudFormation and AWS CDK. This ensures automation, consistency, versioning, and reproducibility of the environment.
 - **AWS Well-Architected Framework:** The design adheres to the pillars of this framework: Operational Excellence, Security, Reliability, Performance Efficiency, and Cost Optimization.
-- **Managed Services:**  Maximized usage of AWS managed services (Lambda, S3, DynamoDB, RDS, Cognito, KMS, AppSync, API Gateway, Glue, SageMaker, QuickSight, etc.) to offload underlying infrastructure management to AWS.
-- **Scalability and Elasticity:** Designed for automatic scaling (horizontally and/or vertically) based on demand, leveraging AWS services' autoscaling capabilities.
-- **High Availability (HA) and Resilience:** Deployment of critical resources across multiple AWS Availability Zones (AZs). Use of services with built-in redundancy and failover capabilities. Disaster Recovery (DR) is designed according to the system's RTO/RPO objectives.
-- **Cloud Security:** Follows the shared responsibility model. Secure configuration of all AWS services, using a defense-in-depth approach (VPCs, subnets, security groups, NACLs, IAM, encryption, WAF, etc.).
+- **Managed Services:** Extensive use of AWS managed services (Lambda, S3, DynamoDB, RDS, Cognito, KMS, AppSync, API Gateway, Glue, SageMaker, QuickSight, etc.) is maximized to delegate infrastructure management to AWS.
+- **Scalability and Elasticity:** Resources are designed to automatically scale (horizontally and/or vertically) in response to demand, using AWS auto-scaling capabilities.
+- **High Availability (HA) and Resilience:** Deployment of critical resources across multiple AWS Availability Zones (AZs). Use of services with built-in redundancy and failover capabilities. Designed for disaster recovery (DR) according to system RTO/RPO objectives.
+- **Cloud Security:** Application of the shared responsibility model. Secure configuration of all AWS services using a defense-in-depth approach (VPCs, subnets, security groups, NACLs, IAM, encryption, WAF, etc.).
 
----
+## Main Services and Infrastructure Configurations
 
-#### Main Services and Infrastructure Configurations
+This section details the primary AWS services and key configuration aspects supporting the application layers (Frontend, Backend, Data) and system functionalities.
 
-This section outlines the main AWS services and key aspects of their configuration that support the application layers (Frontend, Backend, Data) and the system's functionalities.
+### 1. Networking and Connectivity
 
-##### 1. Networking and Connectivity:
+- **Amazon Virtual Private Cloud (VPC)**  
+  **Responsibility:** Create a logically isolated private network within AWS to host resources.  
+  **Configuration:** Design VPCs with public subnets (for internet-facing resources such as Application Load Balancers, NAT Gateways) and private subnets (for backend resources like Lambdas in VPC, RDS, ElastiCache) distributed across multiple AZs. Configure Route Tables, Internet Gateways, NAT Gateways. Implement Security Groups and Network ACLs for detailed traffic control and network segmentation.
 
-**`Amazon Virtual Private Cloud (VPC)` **  
-- **Responsibility:**  Create a logically isolated private network within AWS to host resources.
-- **Configuration:**  Design VPCs with public subnets (for internet-facing resources like ALBs, NAT Gateways) and private subnets (for backend resources like Lambdas in VPC, RDS, ElastiCache), distributed across multiple AZs. Configure Route Tables, Internet Gateways, NAT Gateways. Implement Security Groups and Network ACLs for detailed traffic control and network segmentation.
-  
-**`Amazon API Gateway and AWS AppSync` **  
-- **Responsibility:**  Secure, scalable entry points for REST APIs (API Gateway) and GraphQL APIs (AppSync) that expose the backend layer.
-- **Configuration:**  Integrated with AWS Lambda. Authentication/authorization setup (Cognito Authorizers, IAM, Lambda Authorizers). Throttling, caching, and logging enabled. Integrated with AWS WAF.
+- **Amazon API Gateway and AWS AppSync**  
+  **Responsibility:** Secure and scalable entry points for REST (API Gateway) and GraphQL (AppSync) APIs exposing the Backend layer.  
+  **Configuration:** Integration with AWS Lambda. Authentication/authorization setup (Cognito Authorizers, IAM, Lambda Authorizers). Enable throttling, caching, and logging. Integration with AWS WAF.
 
-**`Amazon CloudFront` **  
-- **Responsibility:**  Content Delivery Network (CDN) to globally distribute the frontend (React/Next.js) and APIs with low latency and high performance.
-- **Configuration:**  Origins (S3, ALBs, API Gateway), cache behaviors, SSL/TLS certificates (via AWS Certificate Manager - ACM), WAF integration.
+- **Amazon CloudFront**  
+  **Responsibility:** Content Delivery Network (CDN) to distribute frontend (React/Next.js) and APIs globally with low latency and high speed.  
+  **Configuration:** Origins (S3, Application Load Balancers, API Gateway), cache behaviors, SSL/TLS certificates (via AWS Certificate Manager - ACM), integration with AWS WAF, and optionally Lambda@Edge for edge logic.
 
-**`AWS PrivateLink` **  
-- **Responsibility:**  Provide private connectivity between VPCs and AWS or third-party hosted services without exposing traffic to the public internet.
+- **AWS PrivateLink**  
+  **Responsibility:** Provide private connectivity between VPCs and AWS services or third-party hosted services without exposing traffic to the public internet.
 
-##### 2. Compute:
+### 2. Compute
 
-**`AWS Lambda` **  
-- **Responsibility:**  Main platform for executing serverless business logic, third-party adapters, data processing functions, and event orchestration.
-- **Configuration:**  Runtimes (Node.js, Python, etc.), memory and timeout settings, IAM roles with least privilege, VPC integration to access private resources (RDS, ElastiCache), triggers (API Gateway, AppSync, S3, EventBridge, etc.), Lambda Layers for dependencies.
+- **AWS Lambda**  
+  **Responsibility:** Main platform for executing serverless backend business logic, third-party adapters, data processing functions, and event orchestration.  
+  **Configuration:** Runtimes (Node.js), memory allocation and timeouts, IAM roles with least privilege permissions, VPC integration for access to private resources (RDS), triggers (API Gateway, AppSync, S3, EventBridge, etc.), Lambda Layers for dependencies.
 
-**`AWS AppRunner` **  
-- **Responsibility:**  Managed service for deploying and running containerized web applications, used for the Backoffice portal (Next.js).
-- **Configuration:**  Connects to code repositories (GitHub) or container registries (ECR), environment variables, autoscaling, VPC integration.
+- **AWS AppRunner**  
+  **Responsibility:** Managed service for deploying and running containerized web applications, used for the Backoffice portal (Next.js).  
+  **Configuration:** Connection to code repositories (GitHub), environment variables, auto-scaling, VPC integration.
 
-**`AWS Fargate` **  
-- **Responsibility:** (Optional, for specific workloads) Serverless compute for containers (Amazon ECS or EKS) without managing EC2 infrastructure. Can be used for long-running batch jobs or services requiring more persistent execution environments than Lambda or AppRunner.
+- **AWS Fargate**  
+  **Responsibility:** (Optional, for specific workloads) Serverless compute for containers (Amazon ECS or EKS) without managing EC2 infrastructure. Could be used for long-running batch processes or services requiring more persistent runtime environments not suited to Lambda or AppRunner.
 
-##### 3. Storage (See Data Layer for data structure details):
+### 3. Storage (Reference to Data Layer for Data Structures Details)
 
-**Amazon S3:**  Primary storage for the Data Lake, documents, templates, backups, and frontend hosting. Configured with versioning, encryption (SSE-KMS), lifecycle policies, and logging.
-**Apache Iceberg, via Glue(on S3):**  Table format for the Data Lake, managed by engines like Glue and Athena.
-**Amazon DynamoDB:**  Managed NoSQL database for transactional application data.
-**Amazon RDS:**  Managed relational database (PostgreSQL, MySQL) for Backoffice data or others requiring relational structure. Configured with Multi-AZ and encryption.
+- **Amazon S3 (Simple Storage Service):** Primary storage for the Data Lake, documents, templates, backups, and frontend hosting. Configured with versioning, encryption (SSE-KMS), lifecycle policies, and logging.
+- **Apache Iceberg (on S3):** Table format for the Data Lake, managed by engines such as Glue and Athena.
+- **Amazon DynamoDB:** Managed NoSQL database for application transactional data.
+- **Amazon RDS (Relational Database Service):** Managed relational database (PostgreSQL, MySQL) for Backoffice data or others requiring relational structure. Configured with Multi-AZ and encryption.
+- **Amazon Neptune:** Managed graph database service for relationships between datasets.
 
-##### 4. Application Integration and Orchestration:
+### 4. Application Integration and Orchestration
 
-**Amazon EventBridge:**  Serverless event bus to connect applications and trigger workflows.
-**Amazon SNS:**  Pub/sub messaging service for notifications and decoupling.
-**Amazon SQS:**  (Implicit for decoupled architectures with Lambda) Message queue service for asynchronous tasks.
-**AWS Step Functions:**  To orchestrate multi-step serverless workflows.
+- **Amazon EventBridge:** Serverless event bus to connect applications and trigger workflows.
+- **Amazon SNS (Simple Notification Service):** Pub/sub messaging service for notifications and decoupling.
+- **Amazon SQS (Simple Queue Service):** (Implicit for decoupled architectures with Lambda) Message queue service for asynchronous tasks.
+- **AWS Step Functions:** To orchestrate multi-step serverless workflows.
 
-##### 5. Data Catalog and Governance (See Data Layer):
+### 5. Data Catalog and Governance (Reference to Data Layer)
 
-**AWS Glue Data Catalog:**  Central repository for technical metadata.
-**AWS Lake Formation:**  To build, secure, and manage data lakes with centralized permissions.
+- **AWS Glue Data Catalog:** Central repository for technical metadata.
+- **AWS Lake Formation:** To build, secure, and manage data lakes, centralizing permissions.
 
-##### 6. AI/ML Services (Platform):
+### 6. AI/ML Services (Platform)
 
-**Amazon SageMaker:**  Platform for training, deploying, and monitoring ML models.
-**Pretrained AI Services:**  Amazon Textract (OCR), Amazon Rekognition (image/video/biometrics), Amazon Entity Resolution (record matching). Their availability and base configuration are part of the cloud layer.
+- **Amazon SageMaker:** Platform for training, deployment, and monitoring of ML models.
+- **Pre-trained AI Services:** Amazon Textract (OCR), Amazon Comprehend (NLP), Amazon Rekognition (image/video/biometrics), Amazon Entity Resolution (record matching). Their availability and base configuration are part of the cloud layer.
 
-##### 7. Analytics and Business Intelligence (Platform):
+### 7. Analytics and Business Intelligence (Platform)
 
-**AWS Glue (ETL, DataBrew):**  For data preparation and transformation.
-**Amazon Athena:**  For interactive SQL queries over the Data Lake.
-**Amazon QuickSight (including Q and Embedded):**  For data visualization and BI.
+- **AWS Glue (ETL, DataBrew):** For data preparation and transformation.
+- **Amazon Athena:** For interactive SQL queries on the Data Lake.
+- **Amazon QuickSight (including Q and Embedded):** For data visualization and BI.
 
-##### 8. Infrastructure Security and Identity Management:
+### 8. Infrastructure Security and Identity Management
 
-**AWS IAM:**  Definition of users, groups, roles, and policies for least privilege access to all AWS resources.
-**AWS Cognito:**  For managing end-user identities on portals (authentication, MFA, federation).
-**AWS KMS:**  Centralized key management for encryption.
-**AWS Secrets Manager:**  Secure storage of secrets.
-**AWS WAF:**  Web Application Firewall for protecting web apps and APIs.
-**AWS Config:**  To evaluate, audit, and record resource configurations.
-**AWS Artifact:**  Access to AWS compliance reports.
+- **AWS IAM (Identity and Access Management):** Definition of users, groups, roles, and policies for least privilege access control to all AWS resources.
+- **AWS Cognito:** For management of end-user identities for portals (authentication, MFA, federation).
+- **AWS KMS (Key Management Service):** Centralized encryption key management.
+- **AWS Secrets Manager:** Secure storage of secrets.
+- **AWS CloudHSM:** (Optional/Specific) Hardware Security Modules for third-party custody.
+- **AWS WAF (Web Application Firewall):** Protection of web applications and APIs.
 
-##### 9. Deployment, Management, and Monitoring:
+### 9. Deployment, Management, and Monitoring
 
-**IaC Tools (AWS CloudFormation, AWS CDK, Terraform):** For defining and provisioning infrastructure as code.
-**AWS Amplify:**  Platform for building and deploying full-stack web apps (frontend and simple backend).
-**AWS AppRunner:**  Used for Backoffice portal deployment.
-**Amazon CloudWatch:**  For monitoring logs, metrics, and configuring alarms.
-**AWS CloudTrail:**  Logs all AWS API calls for auditing.
-**AWS X-Ray:**  For analyzing and debugging distributed applications.
+- **IaC Tools (AWS CloudFormation, AWS CDK, Terraform):** To define and provision infrastructure as code.
+- **AWS Amplify:** Platform to build and deploy full-stack web applications (frontend and simple backend).
+- **AWS AppRunner:** For Backoffice portal deployment.
+- **Amazon CloudWatch:** Monitoring of logs, metrics, and alarm configuration.
+- **AWS CloudTrail:** Logging of all AWS API calls for auditing.
+- **AWS X-Ray:** Analysis and debugging of distributed applications.
 
----
+## Relevant Design/Architecture Patterns (Applied to Cloud Infrastructure)
 
-#### Relevant Design/Architecture Patterns (Applied to Cloud Infrastructure)
+- Infrastructure as Code (IaC): Fundamental practice for managing all AWS resources.
+- Immutable Infrastructure: Updates are made by deploying new instances/versions instead of modifying existing ones.
+- Auto-Scaling: Configure services to dynamically scale based on load.
+- Multi-AZ Deployment: Deployment across multiple Availability Zones for high availability and resilience.
+- Least Privilege Access (IAM): Grant only the strictly necessary permissions.
+- Data Perimeter / Security Groups / NACLs: Establish strong network controls to isolate resources and control traffic flow.
+- Serverless First: Prioritize serverless services to reduce operational management.
+- Blue/Green or Canary Deployments: Strategies for deploying new application versions (facilitated by services like API Gateway, CloudFront, Lambda aliases).
+- Hub and Spoke VPC Design (Optional): If network complexity grows, consider this model for centralized connectivity.
 
-- **Infrastructure as Code (IaC):** Foundational practice for managing all AWS resources.
-- **Immutable Infrastructure:** Updates are deployed via new instances/versions rather than modifying existing ones.
-- **Auto-Scaling:** Services configured to scale dynamically based on load.
-- **Multi-AZ Deployment:** Resources deployed across multiple Availability Zones for high availability and resilience.
-- **Least Privilege Access (IAM):** Grant only strictly necessary permissions.
-- **Data Perimeter / Security Groups / NACLs:** Strong network controls to isolate resources and control traffic flow.
-- **Serverless First:** Prioritize serverless services to reduce operational overhead.
-- **Blue/Green or Canary Deployments:** Deployment strategies for new application versions (enabled by services like API Gateway, CloudFront, Lambda aliases).
-- **Hub and Spoke VPC Design (Optional):** Considered if network complexity increases, for centralized connectivity.
+## Key Dependencies
 
----
+### Internal (within Cloud Layer):
 
-#### Key Dependencies
-
-##### Internal (within the Cloud Layer):
-- Interdependency between AWS services (e.g., Lambda requires IAM roles, API Gateway integrates with Lambda, S3 triggers Lambda/EventBridge).
+- Interdependencies among AWS services (e.g., Lambda needs IAM roles, API Gateway integrates with Lambda, S3 triggers Lambda/EventBridge).
 - VPC configuration is fundamental for many services.
-  
-##### External
-- **Frontend, Backend, and Data Layers of Data Pura Vida:**  These layers run on and heavily utilize the services configured in this Cloud Layer. The Cloud Layer is the enabling platform.
-- **External Identity Providers:** If federation with Cognito is used.
-- **Domain Registrars and DNS Providers**
-- **SSL/TLS Certificate Providers:** AWS Certificate Manager
 
+### External:
+
+- Frontend, Backend, and Data Layers of Data Pura Vida: These layers run on and heavily use the services configured in this Cloud Layer. The Cloud Layer is the enabling platform.
+- External Identity Providers (if federation with Cognito is used).
+- Domain Registrars and DNS.
+- SSL/TLS Certificate Providers (AWS Certificate Manager).
+
+---
 
 ### Layer: Protocols (Communication and Standards)
 
-#### Overview and Key Architectural Patterns
+#### Overview and Key Principles
 
-The Protocols and Standards Layer defines the set of rules, data formats, and communication methods that govern interactions between the various components of Data Pura Vida (Frontend, Backend, Data), as well as communication with third-party services and end users. Proper definition and enforcement of this layer are crucial to ensure interoperability, security, efficiency, and clarity across all information exchanges. Adoption of industry-standard protocols is prioritized to facilitate integration, maintenance, scalability, and system evolution.
+The Protocols and Standards Layer defines the set of rules, data formats, and communication methods governing the interactions between different components of Data Pura Vida (Frontend, Backend, Data), as well as communication with third-party services and end users. Its proper definition and enforcement are crucial to ensure interoperability, security, efficiency, and clarity in all information exchanges. The adoption of industry-standard protocols is prioritized to facilitate integration, maintenance, scalability, and system evolution.
 
-##### Key Principles
+**Key Principles:**
 
-- **Interoperability:**  Use of widely adopted protocols and data formats to ensure seamless integration between internal components and with external systems.
-- **Security:** Strict application of secure protocols across all communications to protect data confidentiality, integrity, and authenticity.
-- **Efficiency:** Selection of protocols and formats that optimize performance and minimize overhead, particularly for high-volume or low-latency data exchanges.
-- **Standardization:** Definition and adherence to internal standards for naming conventions, error message formats, and API structures to ensure consistency and predictability across the platform.
-- **Clarity and Semantics:** Use of protocols that allow clear and precise definition of the meaning of exchanged data and the operations performed.
+* **Interoperability:** Use of widely adopted protocols and data formats to enable smooth integration between internal components and external systems.
+* **Security:** Strict application of secure protocols across all communications to protect the confidentiality, integrity, and authenticity of data.
+* **Efficiency:** Selection of protocols and formats that optimize performance and minimize overhead, especially for large data volumes and low-latency operations.
+* **Standardization:** Definition and adherence to internal standards for naming, error message formats, and API structures to ensure consistency and predictability across the platform.
+* **Clarity and Semantics:** Use of protocols that allow clear and precise definition of the meaning of exchanged data and performed operations.
 
 ---
-#### Main Protocols and Standards Applied
 
-The following details the key protocols and standards used in the various interactions within the Data Pura Vida system.
+#### Key Protocols and Standards Applied
 
-##### 1. API Communication Protocols (Frontend <-> Backend, Service <-> Service):
+Below are the key protocols and standards used in the various interactions of the Data Pura Vida system.
 
-**HTTPS (HTTP Secure)**  
-- **Application:** Core transport protocol for all external (internet-exposed) and internal API communications conducted over HTTP.
-- **Standard:** TLS (Transport Layer Security) version 1.2 or higher. SSL/TLS certificates managed via AWS Certificate Manager (ACM).
-- **Justification:** Industry-standard for secure, encrypted web communication.
-  
-**GraphQL (via AWS AppSync))**  
-- **Application:** Primarily for communication between the Frontend Layer (React/Next.js) and the Backend Layer. Allows clients to request only the data they need, efficiently and precisely.
-- **Standard:** GraphQL Specification.
-- **Justification:** Frontend flexibility, reduction of over-fetching/under-fetching, real-time capabilities via subscriptions.
+1. **API Communication Protocols (Frontend <-> Backend, Service <-> Service)**
 
-**REST (Representational State Transfer) (via Amazon API Gateway)**  
-- **Application:** For specific backend APIs—especially those well-suited to CRUD models—webhooks from third parties, or integrations with systems expecting RESTful interfaces.
-- **Standard:** Uses standard HTTP methods (GET, POST, PUT, DELETE, PATCH), semantic HTTP status codes, and HATEOAS principles where applicable.
-- **Justification:** Widely adopted, well understood, with a rich tooling ecosystem.
+   * **HTTPS (HTTP Secure)**
 
-##### 2. Data Exchange Formats:
+     * **Application:** Fundamental transport protocol for all external (internet-exposed) and internal HTTP communications.
+     * **Standard:** TLS 1.2+ for encrypted communication channels. SSL/TLS certificates managed via AWS Certificate Manager (ACM).
+     * **Justification:** Industry standard for secure web communication.
 
-**JSON (JavaScript Object Notation)**  
-- **Application:** Primary format for request/response bodies in GraphQL and REST APIs. Also used for messages in queues (SQS), topics (SNS), and events (EventBridge).
-- **Justification:** Lightweight, human-readable during development, easy to parse in most languages and platforms.
-  
-**CSV (Comma-Separated Values) and Excel (XLSX)**  
-- **Application:** Supported formats for dataset uploads by users in the "Dataset Management Module".
-- **Justification:** Common tabular data formats widely used in business and data analysis.
+   * **GraphQL (via AWS AppSync)**
 
-**Apache Parquet and Apache ORC (in the Data Lake)**  
-- **Application:** Columnar storage formats optimized for large-scale data analysis within the Data Lake (Amazon S3 + Apache Iceberg via glue). Used by AWS Glue and Amazon Athena.
-- **Justification:** High-performance analytical queries, efficient compression, schema evolution support.
+     * **Application:** Mainly for communication between the Frontend Layer (React/Next.js) and the Backend Layer. Allows clients to request only the data they need.
+     * **Standard:** GraphQL specification.
+     * **Justification:** Frontend flexibility, reduced over-fetching/under-fetching, real-time capabilities with subscriptions.
 
-**Vector Formats (for AI model delivery)**  
-- **Application:** For controlled delivery of data from the "Dashboard and Data Exploration" module to AI models, optimized for machine learning platforms like Amazon SageMaker.
-- **Justification:** Efficient for ML training and inference.
-  
-##### 3. Authentication and Authorization Protocols:
+   * **REST (via Amazon API Gateway)**
 
-**OAuth 2.0 / OpenID Connect (OIDC)**  
-- **Application:** Used by AWS Cognito for identity federation and authentication of portal users.
-- **Justification:** Open, robust standards for user authentication and delegated authorization.
-  
-**JWT (JSON Web Tokens)**  
-- **Application:** Used as bearer tokens to authorize API requests (GraphQL via AppSync and REST via API Gateway) after successful authentication via Cognito.
-- **Justification:** Compact, self-contained, secure standard for transmitting identity and authorization claims between parties.
-  
-**AWS IAM Roles and Policies**  
-- **Application:** For authentication and authorization between AWS services (e.g., AWS Lambda accessing Amazon S3 or DynamoDB).
-- **Justification:** Native AWS security mechanism offering granular, essential control.
+     * **Application:** For certain backend APIs, especially those suited to CRUD resource models, third-party webhooks, or systems expecting RESTful interfaces.
+     * **Standard:** Use of HTTP methods (GET, POST, PUT, DELETE, PATCH), semantic HTTP status codes, and HATEOAS principles where appropriate.
+     * **Justification:** Widely adopted and supported.
 
-**TLS (Transport Layer Security) 1.2+**  
-- **Application:** To encrypt communication channels across all HTTPS-based interactions (APIs, frontend) and sensitive network connections (e.g., RDS database access).
-- **Justification:** Essential standard for secure transport layer communication.
-  
-##### 4. Messaging and Event Protocols:
+2. **Data Exchange Formats**
 
-**Native Protocols of AWS SNS, SQS, EventBridge**  
-- **Application:** For asynchronous, event-driven communication between microservices (Lambdas) and backend components.
-- **Standard:** AWS SDKs abstract the underlying protocols. Entry points like webhooks (SNS, EventBridge) use HTTPS. Messages are typically in JSON format.
-- **Justification:** Managed AWS services that support decoupling, resilience, and scalability for event-driven architectures.
+   * **JSON (JavaScript Object Notation)**
 
-**CloudEvents (Optional Consideration for Internal Standardization)**  
-- **Application:** If a vendor-agnostic standard format is required for internal events flowing through EventBridge or SNS, the CloudEvents specification (CNCF) may be adopted to improve semantic clarity and interoperability.
-- **Justification:** Standardizes event metadata and structure.
+     * **Application:** Primary format for API requests/responses (GraphQL, REST), queue messages (SQS), topics (SNS), and events (EventBridge).
+     * **Justification:** Lightweight, human-readable (for development), and widely supported.
 
-##### 5. Data Access and Storage Protocols:
+   * **CSV and Excel (XLSX)**
 
-**Amazon S3 API (REST/HTTPS-based)**  
-- **Application:** For all programmatic interactions with Amazon S3 object storage.
+     * **Application:** Supported formats for dataset uploads by users in the "Dataset Management Module."
+     * **Justification:** Common tabular formats in business and data analysis.
 
-**Amazon DynamoDB API (HTTPS/JSON-based)**  
-- **Application:** For all programmatic interactions with Amazon DynamoDB NoSQL tables.
+   * **Apache Parquet and Apache ORC (in Data Lake)**
 
-**Relational Database Protocols (e.g., TCP/IP for PostgreSQL/MySQL)**  
-- **Application:** For Backend Layer (Lambdas in VPC) connections to Amazon RDS instances. Communication is encrypted via TLS.
+     * **Application:** Columnar storage formats optimized for large-scale data analysis in the Data Lake (Amazon S3 + Apache Iceberg).
+     * **Justification:** High-performance analytical queries, efficient compression, schema evolution support.
 
-**Graph Database Protocols (e.g., SPARQL or Gremlin over HTTPS for Amazon Neptune)**  
-- **Application:** For interacting with Amazon Neptune graph database.
+   * **Vector Formats (for ML model delivery)**
 
-##### 6. Security and Encryption Standards (Beyond TLS):
+     * **Application:** Controlled delivery of data from the "Dashboard and Data Exploration" to AI models (e.g., Amazon SageMaker).
+     * **Justification:** Optimized for training and inference of ML models.
 
-**AES-256**  
-- **Application:** Symmetric encryption standard used by AWS KMS to encrypt data at rest in Amazon S3, DynamoDB, RDS, etc.
-- **Justification:** Robust, widely accepted encryption standard.
+3. **Authentication and Authorization Protocols**
 
-**Digital Signature Standards (e.g., RSA, ECDSA managed by AWS Signer or KMS)**  
-- **Application:** For signing artifacts or messages to ensure integrity and non-repudiation, such as document or code signature verification.
-- **Justification:** Established cryptographic standards for digital signatures.
-  
-**AWS Encryption SDK**  
-- **Application:** For application-level encryption of ultra-sensitive data requiring additional control over encryption processes and key policies.
-- **Justification:** Provides a client library for implementing encryption best practices.
+   * **OAuth 2.0 / OpenID Connect (OIDC)**
+
+     * **Application:** Used by AWS Cognito for user authentication and identity federation.
+     * **Justification:** Open, robust standards for delegated authorization and user authentication.
+
+   * **JWT (JSON Web Tokens)**
+
+     * **Application:** Used as bearer tokens to authorize GraphQL (AppSync) and REST (API Gateway) requests after Cognito authentication.
+     * **Justification:** Compact, self-contained standard for securely transmitting identity and authorization claims.
+
+   * **AWS IAM Roles and Policies**
+
+     * **Application:** For authentication/authorization between AWS services (e.g., Lambda to S3 or DynamoDB).
+     * **Justification:** Native, granular AWS security mechanism.
+
+   * **TLS 1.2+**
+
+     * **Application:** To encrypt communication channels for all HTTPS interactions (APIs, frontend) and sensitive connections (e.g., Amazon RDS).
+     * **Justification:** Essential transport layer security standard.
+
+4. **Messaging and Event Protocols**
+
+   * **AWS Native Protocols: SNS, SQS, EventBridge**
+
+     * **Application:** Asynchronous, event-driven communication between microservices (Lambdas) and backend components.
+     * **Standard:** AWS SDKs encapsulate underlying protocols; HTTPS for webhook endpoints; JSON for messages.
+     * **Justification:** Managed AWS services enabling decoupling, resilience, scalability (EDA architectures).
+
+   * **CloudEvents (Optional Internal Standardization Consideration)**
+
+     * **Application:** Potentially adopted as a vendor-agnostic format for internal event metadata via EventBridge or SNS.
+     * **Justification:** Standardizes event structure and metadata.
+
+5. **Data Access and Storage Protocols**
+
+   * **Amazon S3 API (REST/HTTPS)**
+
+     * **Application:** All programmatic interactions with S3 object storage.
+
+   * **Amazon DynamoDB API (HTTPS/JSON)**
+
+     * **Application:** All programmatic interactions with DynamoDB NoSQL tables.
+
+   * **Relational DB Protocols (e.g., TCP/IP for PostgreSQL/MySQL)**
+
+     * **Application:** Backend (VPC Lambdas) connections to Amazon RDS, with TLS encryption.
+
+   * **Graph DB Protocols (e.g., SPARQL or Gremlin over HTTPS for Amazon Neptune)**
+
+     * **Application:** To interact with the Amazon Neptune graph database.
+
+6. **Security and Encryption Standards (in addition to TLS)**
+
+   * **AES-256**
+
+     * **Application:** Symmetric encryption standard used by AWS KMS for data at rest (S3, DynamoDB, RDS).
+     * **Justification:** Robust, widely accepted encryption standard.
+
+   * **Digital Signature Standards (e.g., RSA, ECDSA via AWS Signer/KMS)**
+
+     * **Application:** For signing artifacts or messages (e.g., document verification, code signing).
+     * **Justification:** Established cryptographic standards for digital signatures.
+
+   * **AWS Encryption SDK**
+
+     * **Application:** For application-level encryption of ultra-sensitive data, requiring fine-grained control over encryption and key policies.
+     * **Justification:** Client-side library for implementing best encryption practices.
 
 ---
 
 #### Design Considerations and Best Practices
 
-- **API Versioning:** Implement a clear versioning strategy for REST APIs (e.g., in the URL or headers) and GraphQL (via schema evolution and directives like @deprecated) to support backward compatibility.
-- **Standardized Error Handling:** Define and use consistent error response formats and appropriate HTTP status codes across all APIs to facilitate client integration and debugging.
-- **API Documentation:** Generate and maintain clear, up-to-date documentation for all exposed APIs, using tools like Swagger/OpenAPI for REST and schema introspection for GraphQL.
-- **Data Validation (Schema Validation):** Rigorously validate input and output data at multiple points (frontend, API Gateway/AppSync, business logic in Lambda) using defined formats and schemas (JSON Schema, GraphQL schemas, Yup schemas).
-- **Content Negotiation (for REST):** Where applicable and if multiple data formats are expected (though JSON will be the primary), implement content negotiation mechanisms.
+* **API Versioning:** Implement clear versioning strategies for REST APIs (e.g., URL, headers) and GraphQL (schema evolution with directives like @deprecated) to enable backward compatibility.
+* **Standardized Error Handling:** Define and use consistent error response formats and appropriate HTTP status codes for all APIs to facilitate client integration and debugging.
+* **API Documentation:** Maintain clear, up-to-date API documentation using Swagger/OpenAPI for REST and schema introspection for GraphQL.
+* **Data Validation (Schema Validation):** Rigorously validate input/output data at multiple points (frontend, API Gateway/AppSync, Lambda business logic) using defined formats and schemas (JSON Schema, GraphQL schemas, Yup schemas).
+* **Content Negotiation (for REST):** Where applicable, and if multiple data formats are anticipated, implement content negotiation (JSON will be primary).
 
 ---
 
 #### Key Dependencies
 
-##### Frontend Layer:
-- Critically depends on HTTPS, GraphQL/REST, and JSON to communicate with the Backend Layer.
-- Uses OAuth 2.0/OIDC (via Cognito) for user authentication.
-  
-##### Backend Layer
-- Exposes APIs using HTTPS, GraphQL (AppSync), and REST (API Gateway), with JSON as the primary data format.
-- Uses AWS IAM protocols for secure service-to-service communication.
-- Interacts with the Data Layer using the specific protocols of each storage service.
-- Employs messaging protocols (SNS, SQS, EventBridge) and authentication/authorization protocols (OAuth 2.0, JWT).
+* **Frontend Layer:** Relies heavily on HTTPS, GraphQL/REST, and JSON to communicate with Backend Layer. Uses OAuth 2.0/OIDC (via Cognito) for authentication.
+* **Backend Layer:** Exposes APIs via HTTPS, GraphQL (AppSync), and REST (API Gateway), using JSON as the primary data format. Uses AWS IAM for secure inter-service communication. Interfaces with the Data Layer using each service's protocols. Employs messaging protocols (SNS, SQS, EventBridge) and authentication/authorization protocols (OAuth 2.0, JWT).
+* **Data Layer:** Accessed via service-specific protocols (S3 API, DynamoDB API, SQL over TCP/IP for RDS, etc.). Data at rest is protected using encryption standards (AES-256 via KMS).
+* **Third-Party Layer:** Communicates over HTTPS using specific API protocols (typically REST or SOAP with JSON/XML).
+* **Cloud Layer:** Provides network infrastructure (VPCs, API Gateway, AppSync, CloudFront) and security services (KMS, ACM, IAM, Cognito) that enforce and implement these protocols and standards.
 
-##### Data Layer:
-- Accessed using the specific protocols of each service (S3 API, DynamoDB API, SQL over TCP/IP for RDS, etc.).
-- Data at rest is protected using encryption standards (AES-256 via KMS).
-
-##### Third-Party Layer:
-- Communication with external services uses HTTPS and their specific API protocols (typically REST or SOAP with JSON or XML).
-  
-##### Cloud Layer:
-- Provides network infrastructure (VPCs, API Gateway, AppSync, CloudFront) and security services (KMS, ACM, IAM, Cognito) that implement and enforce the correct application of these protocols and standards.
+---
 
 ## Critical Services: Configuration, Monitoring, and Resilience  
 To ensure continuous availability of Data Pura Vida, the following key services incorporate robust configurations, fallback strategies, and proactive monitoring, aligned with the project's security and interoperability objectives.
