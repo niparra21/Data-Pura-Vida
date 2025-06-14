@@ -549,6 +549,9 @@ The Registration component was designed to ensure strict compliance with identit
 
 ### Component: Security
 
+#### Diagram:
+![Imagen de descomposicionDelSistema-Data Lake](./assets/diagrams/descomposicionDelSistema-Seguridad.png)
+
 #### General Overview
 
 The **Security** component ensures the integrity, confidentiality, and controlled access to all operations within the Data Pura Vida ecosystem. It provides robust identity verification, encryption mechanisms, access control models, audit trails, and secure key management. This system supports legal compliance, resilience to misuse, and fine-grained policy enforcement throughout the platform.
@@ -1043,6 +1046,11 @@ Manages how roles, users, and entities interact with the system’s components a
 
 This component enforces organizational governance and system control, allowing platform administrators to handle integrations, enforce security, monitor operations, and maintain compliance with national and international standards. Each subcomponent is modular, auditable, and tailored to ensure traceability and least-privilege access across every operational layer of the Data Pura Vida ecosystem.
 
+### Component: Document Validation
+
+#### Diagram:
+![Imagen de descomposicionDelSistema-Validación-de-Documentos](./assets/diagrams/descomposicionDelSistema-Validación-de-Documentos.png)
+
 ## Key Administrative Functions
 
 -   **Gestión de Usuarios y Entidades**:
@@ -1062,16 +1070,6 @@ This component enforces organizational governance and system control, allowing p
     -   Activating, deactivating, editing, and supervising data objects within the platform.
 
 *(Note: The "Validación de Documentos" process, while having its own diagram, is a critical sub-function primarily within the "bio registro verde" (user registration) workflow, heavily utilizing "AI" and "Security" components, and managed/audited via the "Back Office".)*
-
-### Component: Security
-
-#### Diagram:
-![Imagen de descomposicionDelSistema-Seguridad](./assets/diagrams/descomposicionDelSistema-Seguridad.png)
-
-### Component: Document Validation
-
-#### Diagram:
-![Imagen de descomposicionDelSistema-Validación-de-Documentos](./assets/diagrams/descomposicionDelSistema-Validación-de-Documentos.png)
 
 ---
 
