@@ -479,6 +479,9 @@ View the full hierarchical diagrams here: [Diagrams](https://app.diagrams.net/#G
 
 ### Component: Registration
 
+#### Diagram:
+![Imagen de descomposicionDelSistema-Registro](./assets/diagrams/descomposicionDelSistema-Registro.png)
+
 #### General Overview
 
 The **Registration** component is the entry point for individuals and organizations into the Data Pura Vida ecosystem. It ensures that all actors are validated, authenticated, and securely onboarded using advanced identity verification, customizable registration flows, and role-aware configurations. The entire process integrates AI-based document validation, biometric authentication, geographic filtering, and multifactor mechanisms to guarantee integrity and compliance.
@@ -620,6 +623,9 @@ This security architecture is designed to provide layered protection for sensiti
 
 ### Component: Data Lake
 
+#### Diagram:
+![Imagen de descomposicionDelSistema-Data Lake](./assets/diagrams/descomposicionDelSistema-Data-Lake.png)
+
 #### General Overview
 
 The **Data Lake** is the core of the *Data Pura Vida* ecosystem. It serves as the central repository for structured and semi-structured data, enabling integration, transformation, and analysis through intelligent services. Its hierarchical design ensures secure storage, versioning, dataset relationships, and full traceability, while complying with the system’s security and data governance requirements.
@@ -683,6 +689,9 @@ A transversal system that guarantees data protection and traceability:
 This hierarchical design was created based on system requirements and best practices in modular software architecture. Each subcomponent is a self-contained unit with clear responsibilities, supporting scalability, maintainability, and full data traceability. The Data Lake interacts with other major components (Backend API, Public Portal, and Backoffice) through secure and auditable integration layers, aligned with modern standards of data governance and information security.
 
 ### Component: Dashboard
+
+#### Diagram:
+![Imagen de descomposicionDelSistema-Dashboard](./assets/diagrams/descomposicionDelSistema-Dashboard.png)
 
 #### General Overview
 
@@ -772,6 +781,9 @@ This component combines user-friendly data exploration with strict governance an
 
 ### Component: Catalog
 
+#### Diagram:
+![Imagen de descomposicionDelSistema-Catálogo](./assets/diagrams/descomposicionDelSistema-Catálogo.png)
+
 #### General Overview
 
 The **Catalog** component provides a centralized interface for exploring, filtering, and acquiring datasets within the Data Pura Vida platform. It allows users to distinguish between public and private datasets, review key information before purchase, and access datasets through dashboards post-acquisition. This component ensures transparency, usability, and secure dataset transactions.
@@ -828,6 +840,9 @@ Manages who can view or interact with datasets after exploring or purchasing the
 The Catalog component is designed to serve as the user-facing entry point for discovering and accessing datasets. It integrates policy enforcement, visibility rules, and secure purchase flows, ensuring that dataset availability is transparent, controlled, and compliant. Combined with auditability and usage governance, the Catalog supports responsible data sharing and monetization within the Data Pura Vida platform.
 
 ### Component: Purchases
+
+#### Diagram:
+![Imagen de descomposicionDelSistema-Compras](./assets/diagrams/descomposicionDelSistema-Compras.png)
 
 #### General Overview
 
@@ -888,6 +903,9 @@ Creates a persistent transaction log for administrative review and traceability.
 The Purchases component ensures secure and compliant access to paid datasets. It integrates with external payment systems, internal security modules, and the platform’s access control framework to provide a seamless and traceable transaction process. This component supports revenue-generating models, strengthens auditability, and preserves user trust through secure data handling and transparent communication.
 
 ### Component: Artificial Intelligence (AI)
+
+#### Diagram:
+![Imagen de descomposicionDelSistema-Inteligencia Artificial](./assets/diagrams/descomposicionDelSistema-Inteligencia-Artificial.png)
 
 #### General Overview
 
@@ -951,7 +969,10 @@ Enables AI to assist in generating dashboards, detecting anomalies, and summariz
 
 The AI component acts as a cross-cutting enabler within the Data Pura Vida platform. It reduces manual effort in validation and transformation, enhances data discoverability, and supports regulatory enforcement through automated monitoring. AI-driven decisions help enforce security, improve the user experience, and enable scalable data governance.
 
-### Component: Back Office (Extended View)
+### Component: Back Office
+
+#### Diagram:
+![Imagen de descomposicionDelSistema-Back Office](./assets/diagrams/descomposicionDelSistema-Back-Office.png)
 
 #### General Overview
 
@@ -1041,6 +1062,16 @@ This component enforces organizational governance and system control, allowing p
     -   Activating, deactivating, editing, and supervising data objects within the platform.
 
 *(Note: The "Validación de Documentos" process, while having its own diagram, is a critical sub-function primarily within the "bio registro verde" (user registration) workflow, heavily utilizing "AI" and "Security" components, and managed/audited via the "Back Office".)*
+
+### Component: Security
+
+#### Diagram:
+![Imagen de descomposicionDelSistema-Seguridad](./assets/diagrams/descomposicionDelSistema-Seguridad.png)
+
+### Component: Document Validation
+
+#### Diagram:
+![Imagen de descomposicionDelSistema-Validación-de-Documentos](./assets/diagrams/descomposicionDelSistema-Validación-de-Documentos.png)
 
 ---
 
@@ -2325,6 +2356,9 @@ All interactions with storage (S3), state (DynamoDB), and notifications (SNS) ar
 
 ## Layer: Frontend
 
+### Diagram:
+![Imagen de Arquitectura_Final-Front-End](./assets/diagrams/Arquitectura_Final-Front-End.png)
+
 ### Overview and Key Architectural Patterns
 
 The Frontend layer constitutes the user interface for all interactions with the Data Pura Vida ecosystem, both for end users (citizens, businesses, researchers) and for system administrators via the Backoffice portal. Its design focuses on providing an intuitive, accessible, responsive, and secure user experience (UX), facilitating information display, data input, and smooth communication with the Backend layer.
@@ -2487,6 +2521,9 @@ PWA features like service workers and push notifications (potentially via Amazon
 ---
 
 ## Layer: Backend (Including Middlewares, Handlers, and Business Logic)
+
+### Diagram:
+![Imagen de Arquitectura_Final-backend](./assets/diagrams/Arquitectura_Final-backend.png)
 
 ## Overview and Key Architectural Patterns
 
@@ -2657,6 +2694,9 @@ The following modules represent the specialized Lambda functions, AppSync resolv
 
 ## Data Layer: Storage and Persistence
 
+### Diagram:
+![Imagen de Arquitectura_Final-Data](./assets/diagrams/-)
+
 ### Overview and Key Architectural Patterns
 
 The Data Layer is responsible for the physical persistence, secure and organized storage, cataloging, and governance of all information assets within the Data Pura Vida ecosystem. This includes everything from raw ingested data, to processed and transformed data in the Data Lake, as well as technical and business metadata, system configuration data, audit logs, and transactional data generated by the platform's operations. The storage strategy is based on selective use of AWS services, optimized for different data types, access patterns, and performance requirements, with strong emphasis on security, scalability, efficiency, and centralized governance.
@@ -2789,6 +2829,9 @@ In this layer, "modules" primarily refer to the definition and structure of data
 
 # Third-Party Layer (Integrations with External Services)
 
+### Diagram:
+![Imagen de Arquitectura_Final-terceros](./assets/diagrams/-)
+
 ## Overview and Key Architectural Patterns
 
 The "Third-Party" layer encompasses the software components and configurations dedicated to securely, robustly, and decoupledly interacting with external services essential for the functionalities of Data Pura Vida. These integrations include payment gateways, identity or data verification APIs, and potentially other specialized services such as advanced secret management systems or external Hardware Security Modules (HSMs). The design of this layer prioritizes secure communication (encryption, authentication), comprehensive error and timeout handling, isolation to minimize the impact of third-party unavailability, and continuous health monitoring of these integrations.
@@ -2920,6 +2963,9 @@ These modules represent the software components (primarily AWS Lambda functions)
 ---
 
 # Cloud Layer (Infrastructure and Cloud Platform Services)
+
+### Diagram:
+![Imagen de Arquitectura_Final-cloud](./assets/diagrams/Arquitectura_Final-cloud.png)
 
 ## Overview and Key Architectural Patterns
 
