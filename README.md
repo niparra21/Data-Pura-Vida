@@ -190,7 +190,72 @@ To transform Costa Rica into a leading digital-first nation, fostering a soverei
 - End-to-end demo of every module with real use cases.
 - Secure handover of credentials, documentation, and environment access.
 ---
+## Key KPIs definitions
 
+### Milestone 1: operational base environment
+| **KPI**                                    | **Collection Method**                           | **Tool / Medium**                     | **Frequency**   |
+| ------------------------------------------ | ----------------------------------------------- | ------------------------------------- | --------------- |
+| % of infrastructure deployed automatically | Comparison between defined vs created resources | CloudTrail + Lambda + CloudWatch Logs | Once at closure |
+| Average CI/CD pipeline execution time      | Metric per execution                            | GitHub Actions + CloudWatch metrics   | On every push   |
+| % of IAM roles/policies correctly applied  | Validation against initial security checklist   | IAM + Console review + CloudTrail     | Once at closure |
+
+### Milestone 2: identity and security functional 
+| **KPI**                                     | **Collection Method**                              | **Tool / Medium**                    | **Frequency** |
+| ------------------------------------------- | -------------------------------------------------- | ------------------------------------ | ------------- |
+| % of successful authentications vs attempts | Count of valid vs failed logins                    | Amazon Cognito + CloudWatch Logs     | Daily         |
+| Average biometric validation time           | Delta between start and Rekognition response       | Lambda + Rekognition + X-Ray         | Daily         |
+| % of access blocked by WAF                  | Count of blocked access (unauthorized IP, attacks) | AWS WAF Logs in S3 + Amazon Athena   | Weekly        |
+| % of users with MFA correctly configured    | Users with MFA enabled vs total users              | Amazon Cognito + IAM Identity Center | Daily         |
+
+### Milestone 3: functional modular backend 
+| **KPI**                                                 | **Collection Method**                             | **Tool / Medium**                   | **Frequency**     |
+| ------------------------------------------------------- | ------------------------------------------------- | ----------------------------------- | ----------------- |
+| % of unit test coverage                                 | Coverage analysis in CI/CD                        | GitHub Actions + CloudWatch metrics | On push to `main` |
+| Average API response time                               | Average time per endpoint                         | API Gateway + CloudWatch + X-Ray    | Daily             |
+| % of errors in critical flows (registration/validation) | Count of errors by type                           | Lambda Logs + CloudWatch            | Daily             |
+| Success rate of handler executions                      | Handlers completed without error / total executed | Lambda Logs + QuickSight            | Daily             |
+
+### Milestone 4: functional web portals   
+| **KPI**                               | **Collection Method**                         | **Tool / Medium**                            | **Frequency** |
+| ------------------------------------- | --------------------------------------------- | -------------------------------------------- | ------------- |
+| % of forms successfully submitted     | Total valid / attempted submissions           | DynamoDB + AppSync Logs + CloudWatch Metrics | Daily         |
+| % of forms rejected due to validation | Rejections by type (structure, liveness, MFA) | Glue DataBrew + Lambda + QuickSight          | Daily         |
+| Average form load and validation time | From open to successful submit                | React + CloudWatch Logs                      | Daily         |
+| % of routes effectively protected     | Validation of MFA, JWT, and applied roles     | AppSync + Cognito + IAM Identity Center      | Weekly        |
+
+### Milestone 5: ETDL engine operational
+| **KPI**                                 | **Collection Method**                                | **Tool / Medium**                      | **Frequency** |
+| --------------------------------------- | ---------------------------------------------------- | -------------------------------------- | ------------- |
+| % of datasets successfully processed    | Count of executions without error per full flow      | Glue + Step Functions + CloudWatch     | Daily         |
+| Average ETDL flow duration              | Delta between start and end per dataset              | Step Functions + Glue + X-Ray          | Daily         |
+| % of failures due to format or metadata | Count by error category (schema, fields, duplicates) | Glue DataBrew + SageMaker + QuickSight | Daily         |
+| Structured logs correctly generated     | Traceability validation per processed dataset        | CloudWatch Logs + EventBridge          | Daily         |
+
+### Milestone 6: observability and metrics ready
+| **KPI**                              | **Collection Method**                          | **Tool / Medium**                        | **Frequency**   |
+| ------------------------------------ | ---------------------------------------------- | ---------------------------------------- | --------------- |
+| % of services with active metrics    | Services with active metrics in CloudWatch     | Manual inventory + CloudWatch Dashboards | Once at closure |
+| Time To Detect incidents             | Delta between critical event and alert emitted | CloudWatch + EventBridge + SNS           | Weekly          |
+| Number of critical alerts recorded   | Count of high severity alerts                  | CloudWatch Alarms + QuickSight           | Daily           |
+| % of endpoints traced with X-Ray     | Comparison between total and traced endpoints  | X-Ray + API Gateway + Lambda             | Weekly          |
+
+### Milestone 7: devSecOps finalized + production ready
+| **KPI**                                           | **Collection Method**                | **Tool / Medium**                  | **Frequency** |
+| ------------------------------------------------- | ------------------------------------ | ---------------------------------- | ------------- |
+| % of dependencies scanned without vulnerabilities | Dependency scan results              | GitHub + Dependabot + S3           | Weekly        |
+| Average time between push and deployment          | Delta from push to successful deploy | GitHub Actions + CloudWatch        | Daily         |
+| % of total test coverage (unit + integration)     | Accumulated test results             | GitHub Actions + Glue + QuickSight | Weekly        |
+| Successful contract test execution                | API contract validation              | AppSync + Jest + CI/CD Logs        | Per release   |
+
+### Final milestone: client approval and handover
+| **KPI**                                           | **Collection Method**                                | **Tool / Medium**                    | **Frequency**        |
+| ------------------------------------------------- | ---------------------------------------------------- | ------------------------------------ | -------------------- |
+| Client validation success rate                    | Functional checklist vs deliverables                 | Validation session / signed document | Once                 |
+| % of technical documentation delivered vs planned | Count of technical deliverables                      | Excel comparison template            | Once                 |
+| % of successful validation scripts post-handover  | Result of automated scripts in delivered environment | Lambda Logs + manual checklist       | Once                 |
+
+
+---
 # Product Roadmap
 
 ![Imagen del Product roadmap](./ProductRoadmap.jpg)
