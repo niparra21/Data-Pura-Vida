@@ -3625,7 +3625,7 @@ The PoC execution was successful across all three test cases, validating the hyp
 
 ---
 
-### PoC 2: Data Lake with Apache Iceberg (Final Report)
+### PoC 2: Data Lake with Apache Iceberg
 
 #### 1. Objective and Key Questions to Answer
 The objective of this Proof of Concept (PoC) was to validate the proposed Data Lake architecture, confirming its technical feasibility, functional completeness, and performance for the **Data Pura Vida** use cases. The architecture is based on **Amazon S3** and **Apache Iceberg**.
@@ -3704,7 +3704,7 @@ The tests in Athena validated all PoC objectives.
 
 ---
 
-### PoC 3: Structured Data Extraction and Logical Validation (Final Report)
+### PoC 3: Structured Data Extraction and Logical Validation
 
 #### 1. Objective and Key Questions to Answer
 This Proof of Concept (PoC) serves as a direct continuation of PoC #1. Its primary objective was to validate the system's ability to process raw OCR output, structure it into a useful data model, apply simple business validation rules, and persist the structured result.
@@ -3793,8 +3793,55 @@ The PoC execution was successful, demonstrating the effectiveness of the custom 
 
   ![Test Case 2](assets/POC_Images/POC_20.png)
 
-#### 6. Conclusion & Next Steps
+#### 6. Conclusion
 **Conclusion:**  
 This Proof of Concept was a complete success. It demonstrates that by combining **Amazon Textract** with custom parsing and validation logic in **AWS Lambda**, we can create a robust data extraction pipeline. The solution performs well on clean images and gracefully handles validation errors for poor-quality inputs. This approach is more resilient than relying solely on pre-trained models such as `AnalyzeID`.
 
 ---
+
+PoC #4: Facial Biometric Identity Verification  
+1. Objective and Key Questions to Answer  
+This Proof of Concept (PoC) directly follows the data extraction PoCs and aims to validate the biometric verification capabilities required for the "bio registro verde" module.  
+The key question to be answered is:  
+**Facial Matching Accuracy**: Can Amazon Rekognition reliably compare the face present in a photo of an identity document (cédula) with a user-submitted "selfie" image, exceeding a predefined similarity threshold to confirm they belong to the same person?  
+
+2. Justification / Risk Mitigated  
+This PoC validates a critical security and identity requirement of the project. It mitigates the significant risk of identity fraud (impersonation) by ensuring that the person registering is the same person pictured on the identity document. It also addresses the technical risk that the facial recognition technology might not be precise enough to handle variations in photo quality between an official ID and a user-submitted selfie. A successful outcome provides confidence in the system's ability to estab...
+
+3. Architecture & Implemented Technologies  
+This PoC leverages a serverless architecture, consistent with the patterns validated in previous PoCs.  
+- **API Gateway**: The existing TeamOneApiGateway was used to configure a new, dedicated RESTful endpoint.  
+  **Endpoint**: POST /users/verificar-biometria  
+  ![POC_21](assets/POC_Images/POC_21.png)  
+- **Compute**: A new AWS Lambda function, BiometricVerificationPoC, was created with the Python runtime to orchestrate the comparison.  
+  **CODE**: BiometricVerificationPoC.py  
+  ![POC_22](assets/POC_Images/POC_22.png)  
+- **Artificial Intelligence**: The Amazon Rekognition service, specifically its CompareFaces API, was the core technology tested.  
+- **Data Storage**: The Amazon S3 bucket (poc-documentos-datapv-danielo) was reused to store the test images (both the ID document and the selfie).  
+  ![POC_23](assets/POC_Images/POC_23.png)  
+- **Security**: A new AWS IAM role was created for the Lambda function, granting it least-privilege access to the S3 bucket and the Amazon Rekognition service.  
+  ![POC_24](assets/POC_Images/POC_24.png)  
+- **Observability**: Amazon CloudWatch was used for real-time logging of the Lambda's execution and the detailed results from the Rekognition API.  
+  ![POC_25](assets/POC_Images/POC_25.png)  
+
+4. Execution Methodology  
+The process involved preparing specific test data, implementing the new serverless flow, and executing validation tests for different scenarios.  
+- **Test Data Preparation**: Three pairs of images were prepared and uploaded to the poc-documentos-datapv-danielo S3 bucket to test the primary use cases:  
+  - Matching Pair: An ID photo (cedula_persona_A.jpg) and a selfie of the same person (selfie_persona_A.jpg).  
+  - Non-Matching Pair: The ID photo of person A (cedula_persona_A.jpg) and a selfie of a different person (selfie_persona_B.jpg).  
+  - Error Case: An image that does not contain a clear face, to test the system's error handling.  
+- **Infrastructure & Logic Implementation**: A new, isolated Lambda function (BiometricVerificationPoC) was created and its IAM role was granted the necessary permissions. The Python code was implemented to receive the bucket and image names, call the compare_faces API, set a similarity threshold of 95.0, and process the response to determine a match, a non-match, or an error (e.g., face not detected).  
+- **API Configuration**: The new endpoint POST /users/verificar-biometria was configured in API Gateway to trigger the new Lambda function.  
+- **Testing & Verification**: Using Postman, separate POST requests were sent to the new endpoint for each image pair. The results were verified by inspecting the JSON response returned in Postman.  
+
+5. Results & Findings  
+The PoC execution was successful, validating the hypothesis and meeting all expected outcomes.  
+- **Test Case 1 (Matching Pair)**: The request using the matching pair of images returned a 200 OK status. The response body correctly indicated a successful match, with a similarity score well above the 95% threshold. This confirms the service's ability to accurately identify the same person across different photos.  
+  ![POC_26](assets/POC_Images/POC_26.png)  
+- **Test Case 2 (Non-Matching Pair)**: The request using the non-matching pair of images returned a 200 OK status. The response body correctly indicated that no match was found, as the FaceMatches array returned by Rekognition was empty for the given similarity threshold. This validates the service's ability to distinguish between different individuals.  
+  ![POC_27](assets/POC_Images/POC_27.png)  
+- **Test Case 3 (Error Handling)**: When tested with an image lacking a detectable face, the API correctly returned a 400 Bad Request status with an error message indicating that a face could not be detected, demonstrating robust error handling in the Lambda function.  
+  ![POC_28](assets/POC_Images/POC_28.png)  
+
+6. Conclusion  
+**Conclusion**: This Proof of Concept is considered a complete success. It demonstrates that Amazon Rekognition is a viable, accurate, and effective technology for implementing the crucial biometric facial verification requirement of the Data Pura Vida project. The serverless architecture (API Gateway -> Lambda -> Rekognition) is confirmed to be a suitable and robust pattern for this security-sensitive task.
