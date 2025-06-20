@@ -3456,7 +3456,6 @@ We adopt cloud native and scalable design principles to ensure portability, resi
 | **Dashboards** | Amazon QuickSight     | Embed SDK 2023-11-27  | "Screen-Only" mode (no downloads).                | Proprietary (AWS) – Usage-based pricing                      |
 | **Security**   | AWS KMS               | API 2023-11-0         | Key rotation every 90 days + third-party custody. | Proprietary (AWS)                                            |
 |                | Cognito               | N/A                   | MFA: OTP + Rekognition (liveness check).          | Proprietary (AWS) – Usage-based pricing                      |
-|                | OpenSSL               | 3.2.1                 | TLS 1.3 mandatory.                                | Apache-style License (permissive)                            |
 |                | AWS WAF               | N/A                   | Geo-Restrict Rules (only IPs from Costa Rica).    | Proprietary (AWS)                                            |
 | **DevOps**     | Terraform             | 1.6.0                 | State backend on S3 with locking.                 | Mozilla Public License 2.0                                   |
 |                | GitHub Actions        | N/A                   | Self-hosted runners on EC2 (c6g.xlarge).          | MIT License (subject to GitHub Terms of Service)             |
@@ -3478,9 +3477,8 @@ We adopt cloud native and scalable design principles to ensure portability, resi
 |                | PostgreSQL Driver (`pg`)      | v8.11+           | PostgreSQL 15.5              | RDS Access from Node.js                  | MIT                         |
 |                | Apache Iceberg (Python)       | v1.4.0           | Glue 4.0 + Athena            | Time-Travel Queries (DataLake)           | Apache-2.0                  |
 | **Security**   | AWS Cognito SDK               | v3.470.0+        | Amplify v12                  | MFA (OTP + Rekognition)                  | AWS Proprietary             |
-|                | OpenSSL (Node.js Binding)     | v3.2.1           | TLS 1.3 (Enforced)           | Encryption / Decryption                  | Dual OpenSSL / SSLeay       |
 |                | AWS Encryption SDK            | v3.0+            | KMS + Lambda                 | Client-Side Encryption (Ultra-Sensitive) | Apache-2.0                  |
-| **DevOps**     | Terraform AWS Provider        | ≥v5.0            | Terraform 1.6.0              | AWS Resource Provisioning                | MPL-2.0                     |
+| **DevOps**     | Terraform                     | ≥v5.0            | Terraform 1.6.0              | AWS Resource Provisioning                | MPL-2.0                     |
 |                | GitHub Actions Toolkit        | Latest Stable    | Self-Hosted EC2 Runners      | CI/CD Pipelines                          | MIT                         |
 | **Monitoring** | AWS X-Ray SDK for Node.js     | v3.4.0+          | Node.js 20                   | Distributed Tracing                      | AWS Proprietary             |
 | **Payments**   | SINPE API Client (Costa Rica) | N/A (REST)       | Lambda Integration           | Bank Transfers (Costa Rica)              | Service                     |
@@ -3493,7 +3491,7 @@ We adopt cloud native and scalable design principles to ensure portability, resi
 | **Backend (ML)**   | Python              | 3.11.7           | SageMaker PyTorch 2.1 + Boto3   | AI/ML Training, Glue ETL Jobs          | PSF (Python Software Foundation) |
 | **Frontend**       | JavaScript (ES2022) | ES13 (2022)      | React 18 + Next.js 14           | Dynamic UI, Amplify Integrations       | ECMA International               |
 | **Frontend**       | TypeScript          | 5.3.3            | Next.js 14 App Router           | Type-Safe Components, SDK Wrappers     | Apache-2.0                       |
-| **Infrastructure** | HCL (Terraform)     | 1.6.0            | AWS Provider ≥5.0               | IaC (AppSync, DynamoDB, KMS)           | MPL-2.0                          |
+| **Infrastructure** | HCL (Terraform)     | 1.6.0            | AWS Terraform Provider ≥5.0     | IaC (AppSync, DynamoDB, KMS)           | MPL-2.0                          |
 | **Query (SQL)**    | SQL (PostgreSQL)    | ANSI SQL:2016    | PostgreSQL 15.5 (RDS)           | Complex Joins, RLS Policies            | PostgreSQL License               |
 | **Query (NoSQL)**  | PartiQL             | AWS 2023-10-0    | DynamoDB API 2023               | Document/JSON Queries                  | AWS Proprietary                  |
 | **Data Lake**      | PyIceberg DSL       | 1.4.0            | Glue 4.0 + Athena               | Time-Travel, Schema Evolution          | Apache-2.0                       |
@@ -3514,7 +3512,6 @@ We adopt cloud native and scalable design principles to ensure portability, resi
 | **Monitoring**  | AWS X-Ray SDK              | 3.4.0+                   | Lambda + AppSync             | Distributed tracing                           | AWS Proprietary             |
 |                 | CloudWatch Logs Insights   | N/A                      | DynamoDB Streams             | Real-time log analysis                        | AWS Proprietary             |
 | **CI/CD**       | AWS CodePipeline           | N/A                      | GitHub Actions (EC2 runners) | Multi-stage deployment                        | AWS Proprietary             |
-|                 | AWS SAM CLI                | 1.100.0+                 | Lambda + API Gateway         | Serverless packaging and deployment           | Apache-2.0                  |
 | **Backoffice**  | AWS App Runner             | N/A                      | Next.js 14                   | Admin panel deployment (autoscaling)          | AWS Proprietary             |
 |                 | AWS Step Functions         | SDK 2.22.0               | Document validation          | Manual workflow orchestration                 | AWS Proprietary             |
 | **Payments**    | Stripe CLI                 | 12.0.0                   | Lambda Webhooks              | Local payment testing                         | MIT                         |
