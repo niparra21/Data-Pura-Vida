@@ -3586,7 +3586,7 @@ The PoC implemented a simplified serverless pipeline using the following compone
 
 ![Amazon CloudWatch](assets/POC_Images/POC_08.png)
 
-### 4. Execution Methodology
+#### 4. Execution Methodology
 The process was divided into preparing the test data and executing the analysis requests.
 - **Phase 1: Test Data Preparation** Three images were uploaded to the S3 bucket `poc-documentos-datapv-danielo` to simulate a range of real-world image conditions:
     - `ImagenDePrueba.jpg`: Clear image of the front of the ID card.
@@ -3603,7 +3603,7 @@ The process was divided into preparing the test data and executing the analysis 
 ```
 
 - **Phase 3: Verification** The execution of the ValidarDocumentoSimplePoC Lambda was monitored via Amazon CloudWatch Logs. For each Postman request, the corresponding log stream was inspected to analyze the JSON output containing the text extracted by Amazon Textract.
-### 5. Results & Findings
+#### 5. Results & Findings
 The PoC execution was successful across all three test cases, validating the hypothesis.
 - **Test Case 1 (ImagenDePrueba.jpg)**: Textract demonstrated high accuracy in extracting all visible text fields from the front of the identity card. Character recognition was precise with minimal to no errors.
 
@@ -3617,7 +3617,7 @@ The PoC execution was successful across all three test cases, validating the hyp
 
 ![Test Case 3](assets/POC_Images/POC_04.png)
 
-### 6. Conclusion
+#### 6. Conclusion
 **Conclusion:** The PoC is considered a resounding success. It has been demonstrated that the proposed serverless architecture (API Gateway -> Lambda -> Textract) is effective and that **Amazon Textract** is a viable and sufficiently accurate technology for the document data extraction needs of the Data Pura Vida project, even under sub-optimal image conditions.
 
 ---
