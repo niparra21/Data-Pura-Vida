@@ -2388,7 +2388,7 @@ The system must support uploading large datasets (hundreds of MBs to multiple GB
 
 ### Solution Diagram
 
-![Imagen del Saga Pattern](./assets/Scheduler-Agent-Supervisor-Pattern.png)
+![Imagen del Saga Pattern](./assets/Scheduler-Agent-Supervisor-Pattern2.png)
 
 ### Technical Solution
 The chunked upload process is managed by three primary roles:
