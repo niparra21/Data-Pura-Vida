@@ -2758,7 +2758,7 @@ The following modules represent the specialized Lambda functions, AppSync resolv
 ## Data Layer: Storage and Persistence
 
 ### Diagram:
-![Imagen de Arquitectura_Final-Data](./assets/diagrams/-)
+![Imagen de Arquitectura_Final-Data](./assets/diagrams/Arquitectura_Final-cloud.png.png)
 
 ### Overview and Key Architectural Patterns
 
