@@ -3524,7 +3524,7 @@ We adopt cloud native and scalable design principles to ensure portability, resi
 
 ### A functional prototype was developed for the dashboard modules.
 
-- **Link:** https://pura-vida-dashboard-vista.lovable.app/
+- **Link:** [https://pura-vida-dashboard-vista.lovable.app/](https://data-pura-vida-prototipo.lovable.app)
 
 ---
 
