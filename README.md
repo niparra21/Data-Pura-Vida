@@ -1233,14 +1233,14 @@ This comprehensive decomposition, visually represented in the linked diagrams an
 
 ```ts
 const AuthTokenPayload = {
-  sub: "uuid",
-  email: "string",
-  "custom:rol": "string",
-  "custom:organizacion_id": "string",
-  exp: 1718200100,
-  iss: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_xyz",
-  iat: 1718196500,
-  token_use: "id",
+  sub: "uuid", // Identificador único del usuario
+  email: "string", // Correo electrónico del usuario
+  "custom:rol": "string", // Rol personalizado del usuario
+  "custom:organizacion_id": "string", // ID de la organización a la que pertenece el usuario
+  exp: 1718200100, // Tiempo de expiración del token (epoch)
+  iss: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_xyz", // Emisor del token
+  iat: 1718196500, // Tiempo de emisión del token (epoch)
+  token_use: "id", // Uso del token (id para tokens de identidad)
 };
 ```
 
